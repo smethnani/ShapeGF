@@ -15,12 +15,12 @@ data:
 viz:
   save_freq: 100
   log_freq: 10
-  viz_freq: 2000
+  viz_freq: 500
   val_freq: -1
 
 trainer:
   type: trainers.lgan_trainer_3D
-  epochs: 10000
+  epochs: 2000
   seed: 100
 
   # For autoencoding
