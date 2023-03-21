@@ -99,12 +99,12 @@ class Trainer(BaseTrainer):
 
     def epoch_end(self, epoch, writer=None, **kwargs):
         if self.scheduler_dec is not None:
-            self.scheduler_dec.step(epoch=epoch)
+            self.scheduler_dec.step()
             if writer is not None:
                 writer.add_scalar(
                     'train/opt_dec_lr', self.scheduler_dec.get_lr()[0], epoch)
         if self.scheduler_enc is not None:
-            self.scheduler_enc.step(epoch=epoch)
+            self.scheduler_enc.step()
             if writer is not None:
                 writer.add_scalar(
                     'train/opt_enc_lr', self.scheduler_enc.get_lr()[0], epoch)

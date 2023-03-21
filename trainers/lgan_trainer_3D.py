@@ -70,13 +70,13 @@ class Trainer(BaseTrainer):
         super().epoch_end(epoch, writer=writer)
 
         if self.scheduler_dis is not None:
-            self.scheduler_dis.step(epoch=epoch)
+            self.scheduler_dis.step()
             if writer is not None:
                 writer.add_scalar(
                     'train/opt_dis_lr', self.scheduler_dis.get_lr()[0], epoch)
 
         if self.scheduler_gen is not None:
-            self.scheduler_gen.step(epoch=epoch)
+            self.scheduler_gen.step()
             if writer is not None:
                 writer.add_scalar(
                     'train/opt_gen_lr', self.scheduler_gen.get_lr()[0], epoch)
