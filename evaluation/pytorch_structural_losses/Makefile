@@ -6,7 +6,7 @@ DEBUG := 1
 
 CXX := g++
 PYTHON := python
-NVCC := /usr/local/cuda/bin/nvcc
+NVCC := nvcc
 
 # PYTHON Header path
 PYTHON_HEADER_DIR := $(shell $(PYTHON) -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
@@ -66,13 +66,13 @@ CXXFLAGS += -MMD -MP
 # Complete build flags.
 COMMON_FLAGS += $(foreach includedir,$(INCLUDE_DIRS),-I$(includedir)) \
 	     -DTORCH_API_INCLUDE_EXTENSION_H -D_GLIBCXX_USE_CXX11_ABI=0
-CXXFLAGS += -pthread -fPIC -fwrapv -std=c++11 $(COMMON_FLAGS) $(WARNINGS)
-NVCCFLAGS += -std=c++11 -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
+CXXFLAGS += -pthread -fPIC -fwrapv -std=c++14 $(COMMON_FLAGS) $(WARNINGS)
+NVCCFLAGS += -std=c++14 -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
 
 all: $(STATIC_LIB)
 	$(PYTHON) setup.py build
-	@ mv build/lib.linux-x86_64-3.6/StructuralLosses ..
-	@ mv build/lib.linux-x86_64-3.6/*.so ../StructuralLosses/
+	@ mv build/lib.linux-x86_64-*/StructuralLosses ..
+	@ mv build/lib.linux-x86_64-*/*.so ../StructuralLosses/
 	@- $(RM) -rf $(OBJ_DIR) build objs
 
 $(OBJ_DIR):
