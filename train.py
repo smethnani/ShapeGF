@@ -58,7 +58,7 @@ def get_args():
     # parse config file
 
     with open(args.config, 'r') as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
     config = dict2namespace(config)
 
     #  Create log_name
@@ -76,7 +76,6 @@ def get_args():
 def main_worker(cfg, args):
     # basic setup
     cudnn.benchmark = True
-
     writer = SummaryWriter(logdir=cfg.log_name)
     data_lib = importlib.import_module(cfg.data.type)
     loaders = data_lib.get_data_loaders(cfg.data, args)
