@@ -14,13 +14,13 @@ data:
 
 viz:
   log_freq: 10
-  viz_freq: 5000
+  viz_freq: 1000
   save_freq: 100
   val_freq: 100
 
 trainer:
   type: trainers.ae_trainer_3D
-  epochs: 2000
+  epochs: 500
   seed: 100
   sigma_begin: 1
   sigma_end: 0.01
