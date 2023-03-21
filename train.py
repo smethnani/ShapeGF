@@ -4,11 +4,15 @@ import time
 import torch
 import argparse
 import importlib
+import wandb
 import torch.distributed
 from torch.backends import cudnn
 from tensorboardX import SummaryWriter
 from shutil import copy2
 
+PROJECT_NAME = os.environ.get('WANDB_PROJECT')
+if PROJECT_NAME == None:
+    print('WAND_PROJECT environment variable not set.')
 
 def get_args():
     # command line args
@@ -76,6 +80,7 @@ def get_args():
 def main_worker(cfg, args):
     # basic setup
     cudnn.benchmark = True
+    wandb.init(project=PROJECT_NAME, sync_tensorboard=True)
     writer = SummaryWriter(logdir=cfg.log_name)
     data_lib = importlib.import_module(cfg.data.type)
     loaders = data_lib.get_data_loaders(cfg.data, args)
@@ -134,6 +139,7 @@ def main_worker(cfg, args):
         # Signal the trainer to cleanup now that an epoch has ended
         trainer.epoch_end(epoch, writer=writer)
     writer.close()
+    wandb.finish()
 
 
 if __name__ == '__main__':
