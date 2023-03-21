@@ -2,6 +2,7 @@ import os
 import tqdm
 import torch
 import importlib
+import wandb
 import numpy as np
 from trainers.base_trainer import BaseTrainer
 from trainers.utils.vis_utils import visualize_point_clouds_3d, \
@@ -176,6 +177,14 @@ class Trainer(BaseTrainer):
                 print("Ground truth recon:")
                 rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                     inp[:num_vis].cuda(), self.cfg)
+
+                print("Saving Reconstructed point clouds")
+                generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                wandb.log({
+                    "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
+                    "GT": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]
+                    })
                 # Overview
                 all_imgs = []
                 for idx in range(num_vis):

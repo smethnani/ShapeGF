@@ -207,6 +207,13 @@ class Trainer(BaseTrainer):
                     self.sigmas, smp_list, gtr, num_vis, self.cfg, "gen")
                 writer.add_image(
                     'tr_vis/gen_process', torch.as_tensor(img), step)
+                print("Saving point clouds")
+                generated = [smp[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                wandb.log({
+                    "generated_samples": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
+                    "gtr": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]
+                    })
 
     def save(self, epoch=None, step=None, appendix=None, **kwargs):
         d = {
