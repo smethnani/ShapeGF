@@ -7,12 +7,8 @@ import importlib
 import wandb
 import torch.distributed
 from torch.backends import cudnn
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from shutil import copy2
-
-PROJECT_NAME = os.environ.get('WANDB_PROJECT')
-if PROJECT_NAME == None:
-    print('WAND_PROJECT environment variable not set.')
 
 def get_args():
     # command line args
@@ -20,6 +16,9 @@ def get_args():
         description='Flow-based Point Cloud Generation Experiment')
     parser.add_argument('config', type=str,
                         help='The configuration file.')
+
+    parser.add_argument('--wandb', default=None, type=str, help='WandB project name for logging. WandB '
+                            'will not be used if not passed')
 
     # distributed training
     parser.add_argument('--world_size', default=1, type=int,
@@ -80,8 +79,7 @@ def get_args():
 def main_worker(cfg, args):
     # basic setup
     cudnn.benchmark = True
-    wandb.init(project=PROJECT_NAME, sync_tensorboard=True)
-    writer = SummaryWriter(logdir=cfg.log_name)
+    writer = SummaryWriter(log_dir=cfg.log_name)
     data_lib = importlib.import_module(cfg.data.type)
     loaders = data_lib.get_data_loaders(cfg.data, args)
     train_loader = loaders['train_loader']
@@ -139,8 +137,6 @@ def main_worker(cfg, args):
         # Signal the trainer to cleanup now that an epoch has ended
         trainer.epoch_end(epoch, writer=writer)
     writer.close()
-    wandb.finish()
-
 
 if __name__ == '__main__':
     # command line args
@@ -152,4 +148,11 @@ if __name__ == '__main__':
     print("Configuration:")
     print(cfg)
 
+    wandb_project = args.wandb
+    if wandb_project:
+        wandb.init(project=wandb_project, sync_tensorboard=True)
+
     main_worker(cfg, args)
+
+    if wandb_project:
+        wandb.finish()
