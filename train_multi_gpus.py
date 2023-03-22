@@ -6,7 +6,7 @@ import argparse
 import importlib
 import torch.distributed
 from torch.backends import cudnn
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from shutil import copy2
 import torch.multiprocessing as mp
 import torch.nn as nn
@@ -93,8 +93,6 @@ def get_args(ngpus_per_node):
 def main_worker(gpu, ngpus_per_node, cfg, args):
     # basic setup
     cudnn.benchmark = True
-    # basic setup
-    cudnn.benchmark = True
     args.gpu = gpu
     args.rank = gpu
     assert args.gpu is not None
@@ -107,7 +105,7 @@ def main_worker(gpu, ngpus_per_node, cfg, args):
         world_size=args.world_size, rank=args.rank)
 
     if args.rank % ngpus_per_node == 0:
-        writer = SummaryWriter(logdir=cfg.log_name)
+        writer = SummaryWriter(log_dir=cfg.log_name)
     else:
         writer = None
 
