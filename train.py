@@ -17,9 +17,6 @@ def get_args():
     parser.add_argument('config', type=str,
                         help='The configuration file.')
 
-    parser.add_argument('--wandb', default=None, type=str, help='WandB project name for logging. WandB '
-                            'will not be used if not passed')
-
     # distributed training
     parser.add_argument('--world_size', default=1, type=int,
                         help='Number of distributed nodes.')
@@ -148,11 +145,8 @@ if __name__ == '__main__':
     print("Configuration:")
     print(cfg)
 
-    wandb_project = args.wandb
-    if wandb_project:
-        wandb.init(project=wandb_project, sync_tensorboard=True)
+    wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True)
 
     main_worker(cfg, args)
 
-    if wandb_project:
-        wandb.finish()
+    wandb.finish()

@@ -28,7 +28,7 @@ In this work, we propose a novel technique to generate shapes from point cloud d
 
 ## Dependencies
 ```bash
-# Create conda environment with torch 1.2.0 and CUDA 10.0
+# Create conda environment with pytorch 1.12.1 and CUDA 11.6
 conda env create -f environment.yml
 conda activate ShapeGF
 

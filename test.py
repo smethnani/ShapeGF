@@ -4,6 +4,7 @@ import time
 import torch.nn as nn
 import argparse
 import importlib
+import wandb
 from torch.backends import cudnn
 from shutil import copy2
 from pprint import pprint
@@ -76,6 +77,8 @@ def main_worker(cfg, args):
     trainer.resume(args.pretrained)
     print(cfg.save_dir)
     val_info = trainer.validate(test_loader, epoch=-1)
+    wandb.log(val_info)
+
     print("Test done:")
     pprint(val_info)
 
@@ -89,5 +92,6 @@ if __name__ == '__main__':
 
     print("Configuration:")
     print(cfg)
-
+    wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True)
     main_worker(cfg, args)
+    wandb.finish()
