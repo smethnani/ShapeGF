@@ -3,6 +3,7 @@ import tqdm
 import torch
 import random
 import importlib
+import wandb
 import numpy as np
 from trainers.utils.utils import get_opt
 from trainers.ae_trainer_3D import Trainer as BaseTrainer
@@ -175,12 +176,12 @@ class Trainer(BaseTrainer):
         super().log_train(train_info, train_data, writer=writer, step=step,
                           epoch=epoch, visualize=visualize)
         if step is not None:
-            writer.add_histogram('tr/latent_real', train_info['x_real'], step)
-            writer.add_histogram('tr/latent_fake', train_info['x_fake'], step)
+            writer.add_histogram('tr/latent_real', train_info['x_real'], step, bins=512)
+            writer.add_histogram('tr/latent_fake', train_info['x_fake'], step, bins=512)
         else:
             assert epoch is not None
-            writer.add_histogram('tr/latent_real', train_info['x_real'], epoch)
-            writer.add_histogram('tr/latent_fake', train_info['x_fake'], epoch)
+            writer.add_histogram('tr/latent_real', train_info['x_real'], epoch, bins=512)
+            writer.add_histogram('tr/latent_fake', train_info['x_fake'], epoch, bins=512)
 
         if visualize:
             with torch.no_grad():
