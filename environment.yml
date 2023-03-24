@@ -9,6 +9,7 @@ dependencies:
   - gdown=4.6.4
   - tensorboard=2.11.0
   - ninja=1.10.2
+  - numpy==1.23.5
   - matplotlib-base=3.4.3
   - pytorch=1.12.1
   - scikit-learn=1.2.1

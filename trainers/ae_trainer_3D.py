@@ -103,12 +103,12 @@ class Trainer(BaseTrainer):
             self.scheduler_dec.step()
             if writer is not None:
                 writer.add_scalar(
-                    'train/opt_dec_lr', self.scheduler_dec.get_last_lr(), epoch)
+                    'train/opt_dec_lr', self.scheduler_dec.get_last_lr()[0], epoch)
         if self.scheduler_enc is not None:
             self.scheduler_enc.step()
             if writer is not None:
                 writer.add_scalar(
-                    'train/opt_enc_lr', self.scheduler_enc.get_last_lr(), epoch)
+                    'train/opt_enc_lr', self.scheduler_enc.get_last_lr()[0], epoch)
 
     def update(self, data, *args, **kwargs):
         if 'no_update' in kwargs:

@@ -74,13 +74,13 @@ class Trainer(BaseTrainer):
             self.scheduler_dis.step()
             if writer is not None:
                 writer.add_scalar(
-                    'train/opt_dis_lr', self.scheduler_dis.get_last_lr(), epoch)
+                    'train/opt_dis_lr', self.scheduler_dis.get_last_lr()[0], epoch)
 
         if self.scheduler_gen is not None:
             self.scheduler_gen.step()
             if writer is not None:
                 writer.add_scalar(
-                    'train/opt_gen_lr', self.scheduler_gen.get_last_lr(), epoch)
+                    'train/opt_gen_lr', self.scheduler_gen.get_last_lr()[0], epoch)
 
     def _update_gan_(self, data, gen=False):
         self.gen.train()
