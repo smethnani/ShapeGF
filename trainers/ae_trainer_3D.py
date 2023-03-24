@@ -14,8 +14,9 @@ from trainers.utils.utils import get_opt, get_prior, \
 try:
     from evaluation.evaluation_metrics import EMD_CD
     eval_reconstruciton = True
-except:  # noqa
+except Exception as e:  # noqa
     # Skip evaluation
+    print(f'Error: {e}')
     eval_reconstruciton = False
 
 
@@ -102,19 +103,17 @@ class Trainer(BaseTrainer):
             self.scheduler_dec.step()
             if writer is not None:
                 writer.add_scalar(
-                    'train/opt_dec_lr', self.scheduler_dec.get_lr()[0], epoch)
+                    'train/opt_dec_lr', self.scheduler_dec.get_last_lr(), epoch)
         if self.scheduler_enc is not None:
             self.scheduler_enc.step()
             if writer is not None:
                 writer.add_scalar(
-                    'train/opt_enc_lr', self.scheduler_enc.get_lr()[0], epoch)
+                    'train/opt_enc_lr', self.scheduler_enc.get_last_lr(), epoch)
 
     def update(self, data, *args, **kwargs):
         if 'no_update' in kwargs:
             no_update = kwargs['no_update']
         else:
-            no_update = False
-        if not no_update:
             self.encoder.train()
             self.score_net.train()
             self.opt_enc.zero_grad()
