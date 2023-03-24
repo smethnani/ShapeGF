@@ -34,6 +34,8 @@ def get_args(ngpus_per_node):
         description='Flow-based Point Cloud Generation Experiment')
     parser.add_argument('config', type=str,
                         help='The configuration file.')
+    parser.add_argument('--log', type=str,
+                        help='Log destination')
 
     # distributed training
     parser.add_argument('--batch_size', default=None, type=int,
@@ -79,11 +81,19 @@ def get_args(ngpus_per_node):
     #  Create log_name
     cfg_file_name = os.path.splitext(os.path.basename(args.config))[0]
     run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
+    
+    logdir = args.log
+    if logdir:
+        config.log_name = f"logs/{logdir}"
+        config.save_dir = f"logs/{logdir}"
+        config.log_dir = f"logs/{logdir}"
+    else:
+        run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
+        # Currently save dir and log_dir are the same
+        config.log_name = "logs/%s_%s" % (cfg_file_name, run_time)
+        config.save_dir = "logs/%s_%s" % (cfg_file_name, run_time)
+        config.log_dir = "logs/%s_%s" % (cfg_file_name, run_time)
 
-    # Currently save dir and log_dir are the same
-    config.log_name = "logs/%s_%s" % (cfg_file_name, run_time)
-    config.save_dir = "logs/%s_%s" % (cfg_file_name, run_time)
-    config.log_dir = "logs/%s_%s" % (cfg_file_name, run_time)
     if args.local_rank % ngpus_per_node == 0:
         os.makedirs(config.log_dir+'/config', exist_ok=True)
         copy2(args.config, config.log_dir+'/config')

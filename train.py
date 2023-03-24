@@ -17,6 +17,9 @@ def get_args():
     parser.add_argument('config', type=str,
                         help='The configuration file.')
 
+    parser.add_argument('--log', type=str,
+                        help='Log destination')
+
     # distributed training
     parser.add_argument('--world_size', default=1, type=int,
                         help='Number of distributed nodes.')
@@ -63,11 +66,18 @@ def get_args():
 
     #  Create log_name
     cfg_file_name = os.path.splitext(os.path.basename(args.config))[0]
-    run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
-    # Currently save dir and log_dir are the same
-    config.log_name = "logs/%s_%s" % (cfg_file_name, run_time)
-    config.save_dir = "logs/%s_%s" % (cfg_file_name, run_time)
-    config.log_dir = "logs/%s_%s" % (cfg_file_name, run_time)
+    logdir = args.log
+    if logdir:
+        config.log_name = f"logs/{logdir}"
+        config.save_dir = f"logs/{logdir}"
+        config.log_dir = f"logs/{logdir}"
+    else:
+        run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
+        # Currently save dir and log_dir are the same
+        config.log_name = "logs/%s_%s" % (cfg_file_name, run_time)
+        config.save_dir = "logs/%s_%s" % (cfg_file_name, run_time)
+        config.log_dir = "logs/%s_%s" % (cfg_file_name, run_time)
+
     os.makedirs(config.log_dir+'/config')
     copy2(args.config, config.log_dir+'/config')
     return args, config
