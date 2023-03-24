@@ -114,6 +114,8 @@ class Trainer(BaseTrainer):
         if 'no_update' in kwargs:
             no_update = kwargs['no_update']
         else:
+            no_update = False
+        if not no_update:
             self.encoder.train()
             self.score_net.train()
             self.opt_enc.zero_grad()
