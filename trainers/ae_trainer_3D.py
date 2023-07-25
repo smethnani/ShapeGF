@@ -20,26 +20,48 @@ except Exception as e:  # noqa
     eval_reconstruciton = False
 
 
-def score_matching_loss(score_net, shape_latent, tr_pts, sigma):
-    bs, num_pts = tr_pts.size(0), tr_pts.size(1)
-    sigma = sigma.view(bs, 1, 1)
-    perturbed_points = tr_pts + torch.randn_like(tr_pts) * sigma
+# def score_matching_loss(score_net, shape_latent, tr_pts, sigma):
+#     bs, num_pts = tr_pts.size(0), tr_pts.size(1)
+#     sigma = sigma.view(bs, 1, 1)
+#     perturbed_points = tr_pts + torch.randn_like(tr_pts) * sigma
 
-    # For numerical stability, the network predicts the field in a normalized
-    # scale (i.e. the norm of the gradient is not scaled by `sigma`)
-    # As a result, when computing the ground truth for supervision, we are using
-    # its original scale without scaling by `sigma`
-    y_pred = score_net(perturbed_points, shape_latent)  # field (B, #points, 3)
-    y_gtr = - (perturbed_points - tr_pts).view(bs, num_pts, -1)
+#     # For numerical stability, the network predicts the field in a normalized
+#     # scale (i.e. the norm of the gradient is not scaled by `sigma`)
+#     # As a result, when computing the ground truth for supervision, we are using
+#     # its original scale without scaling by `sigma`
+#     y_pred = score_net(perturbed_points, shape_latent)  # field (B, #points, 3)
+#     y_gtr = - (perturbed_points - tr_pts).view(bs, num_pts, -1)
 
-    # The loss for each sigma is weighted
-    lambda_sigma = 1. / sigma
-    loss = 0.5 * ((y_gtr - y_pred) ** 2. * lambda_sigma).sum(dim=2).mean()
-    return {
-        "loss": loss,
-        "x": perturbed_points
-    }
+#     # The loss for each sigma is weighted
+#     lambda_sigma = 1. / sigma
+#     loss = 0.5 * ((y_gtr - y_pred) ** 2. * lambda_sigma).sum(dim=2).mean()
+#     return {
+#         "loss": loss,
+#         "x": perturbed_points
+#     }
 
+def sample_pairs(data, x0 = None):
+    if x0 is None:
+        x0 = torch.randn_like(data)
+    z0 = x0
+    t = torch.rand((data.shape[0], 1, 1)).to(data.device)
+    inter_data = t * data + (1.-t) * z0
+    target = data - z0
+    return inter_data, t * 999, target
+
+def flow_matching_loss(vnet, data, noise):
+    B, D, N = data.shape
+    t = torch.randint(0, 1000, size=(B,), device=data.device)
+
+    if noise is not None:
+        noise[t!=0] = torch.randn((t!=0).sum(), *noise.shape[1:]).to(noise)
+
+    inter_data, t, target = sample_pairs(data)
+    t = t.squeeze()
+    data_t = inter_data
+    eps_recon = vnet(data_t, t)
+    loss = ((target - eps_recon)**2).mean(dim=list(range(1, len(data.shape))))
+    return loss.mean()
 
 class Trainer(BaseTrainer):
 
@@ -51,10 +73,10 @@ class Trainer(BaseTrainer):
 
         # The networks
         sn_lib = importlib.import_module(cfg.models.scorenet.type)
-        self.score_net = sn_lib.Decoder(cfg, cfg.models.scorenet)
-        self.score_net.cuda()
-        print("ScoreNet:")
-        print(self.score_net)
+        self.vnet = sn_lib.Decoder(cfg, cfg.models.scorenet)
+        self.vnet.cuda()
+        print("VNet:")
+        print(self.vnet)
 
         encoder_lib = importlib.import_module(cfg.models.encoder.type)
         self.encoder = encoder_lib.Encoder(cfg.models.encoder)
@@ -71,20 +93,20 @@ class Trainer(BaseTrainer):
         self.opt_enc, self.scheduler_enc = get_opt(
             self.encoder.parameters(), self.cfg.trainer.opt_enc)
         self.opt_dec, self.scheduler_dec = get_opt(
-            self.score_net.parameters(), self.cfg.trainer.opt_dec)
+            self.vnet.parameters(), self.cfg.trainer.opt_dec)
 
         # Sigmas
-        if hasattr(cfg.trainer, "sigmas"):
-            self.sigmas = cfg.trainer.sigmas
-        else:
-            self.sigma_begin = float(cfg.trainer.sigma_begin)
-            self.sigma_end = float(cfg.trainer.sigma_end)
-            self.num_classes = int(cfg.trainer.sigma_num)
-            self.sigmas = np.exp(
-                np.linspace(np.log(self.sigma_begin),
-                            np.log(self.sigma_end),
-                            self.num_classes))
-        print("Sigma:, ", self.sigmas)
+        # if hasattr(cfg.trainer, "sigmas"):
+        #     self.sigmas = cfg.trainer.sigmas
+        # else:
+        #     self.sigma_begin = float(cfg.trainer.sigma_begin)
+        #     self.sigma_end = float(cfg.trainer.sigma_end)
+        #     self.num_classes = int(cfg.trainer.sigma_num)
+        #     self.sigmas = np.exp(
+        #         np.linspace(np.log(self.sigma_begin),
+        #                     np.log(self.sigma_end),
+        #                     self.num_classes))
+        # print("Sigma:, ", self.sigmas)
 
         # Prepare save directory
         os.makedirs(os.path.join(cfg.save_dir, "images"), exist_ok=True)
@@ -96,7 +118,7 @@ class Trainer(BaseTrainer):
 
     def multi_gpu_wrapper(self, wrapper):
         self.encoder = wrapper(self.encoder)
-        self.score_net = wrapper(self.score_net)
+        self.vnet = wrapper(self.vnet)
 
     def epoch_end(self, epoch, writer=None, **kwargs):
         if self.scheduler_dec is not None:
@@ -117,7 +139,7 @@ class Trainer(BaseTrainer):
             no_update = False
         if not no_update:
             self.encoder.train()
-            self.score_net.train()
+            self.vnet.train()
             self.opt_enc.zero_grad()
             self.opt_dec.zero_grad()
 
@@ -127,14 +149,14 @@ class Trainer(BaseTrainer):
         z = z_mu + 0 * z_sigma
 
         # Randomly sample sigma
-        labels = torch.randint(
-            0, len(self.sigmas), (batch_size,), device=tr_pts.device)
-        used_sigmas = torch.tensor(
-            np.array(self.sigmas))[labels].float().view(batch_size, 1).cuda()
-        z = torch.cat((z, used_sigmas), dim=1)
+        # labels = torch.randint(
+        #     0, len(self.sigmas), (batch_size,), device=tr_pts.device)
+        # used_sigmas = torch.tensor(
+        #     np.array(self.sigmas))[labels].float().view(batch_size, 1).cuda()
+        # z = torch.cat((z, used_sigmas), dim=1)
 
-        res = score_matching_loss(self.score_net, z, tr_pts, used_sigmas)
-        loss = res['loss']
+        noise = torch.randn(len(tr_points), tr_points.shape[1], tr_points.shape[2])
+        loss = flow_matching_loss(self.vnet, tr_pts, noise)
         if not no_update:
             loss.backward()
             self.opt_enc.step()
@@ -148,6 +170,7 @@ class Trainer(BaseTrainer):
     def log_train(self, train_info, train_data, writer=None,
                   step=None, epoch=None, visualize=False, **kwargs):
         if writer is None:
+            print("No writer, exiting...")
             return
 
         # Log training information to tensorboard
@@ -167,45 +190,47 @@ class Trainer(BaseTrainer):
                 print("Visualize: %s" % step)
                 gtr = train_data['te_points']  # ground truth point cloud
                 inp = train_data['tr_points']  # input for encoder
-                ptb = train_info['x']  # perturbed data
+                # ptb = train_info['x']  # perturbed data
                 num_vis = min(
                     getattr(self.cfg.viz, "num_vis_samples", 5),
                     gtr.size(0))
 
                 print("Recon:")
-                rec, rec_list = self.reconstruct(
+                rec, rec_list, timestamps = self.reconstruct(
                     inp[:num_vis].cuda(), num_points=inp.size(1))
-                print("Ground truth recon:")
-                rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
-                    inp[:num_vis].cuda(), self.cfg)
+                # print("Ground truth recon:")
+                # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
+                #     inp[:num_vis].cuda(), self.cfg)
 
                 print("Saving Reconstructed point clouds")
                 generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
-                ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                # ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 wandb.log({
                     "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
-                    "GT": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]
+                    "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]
                     })
                 # Overview
                 all_imgs = []
                 for idx in range(num_vis):
                     img = visualize_point_clouds_3d(
-                        [rec_gt[idx], rec[idx], gtr[idx], ptb[idx]],
-                        ["rec_gt", "recon", "shape", "perturbed"])
+                        # [rec_gt[idx], rec[idx], gtr[idx], ptb[idx]],
+                        [rec[idx], gtr[idx]],
+                        ["Reconstruction", "True Shape"])
                     all_imgs.append(img)
                 img = np.concatenate(all_imgs, axis=1)
                 writer.add_image(
                     'tr_vis/overview', torch.as_tensor(img), step)
 
-                # Reconstruction gt procedure
-                img = visualize_procedure(
-                    self.sigmas, rec_gt_list, gtr, num_vis, self.cfg, "Rec_gt")
-                writer.add_image(
-                    'tr_vis/rec_gt_process', torch.as_tensor(img), step)
+                # # Reconstruction gt procedure
+                # img = visualize_procedure(
+                #     self.sigmas, rec_gt_list, gtr, num_vis, self.cfg, "Rec_gt")
+                # writer.add_image(
+                #     'tr_vis/rec_gt_process', torch.as_tensor(img), step)
 
                 # Reconstruction procedure
                 img = visualize_procedure(
-                    self.sigmas, rec_list, gtr, num_vis, self.cfg, "Rec")
+                    timestamps, rec_list, gtr, num_vis, self.cfg, "Rec")
                 writer.add_image(
                     'tr_vis/rec_process', torch.as_tensor(img), step)
 
@@ -221,7 +246,7 @@ class Trainer(BaseTrainer):
             inp_pts = data['tr_points'].cuda()
             m = data['mean'].cuda()
             std = data['std'].cuda()
-            rec_pts, _ = self.reconstruct(inp_pts, num_points=inp_pts.size(1))
+            rec_pts, _, _ = self.reconstruct(inp_pts, num_points=inp_pts.size(1), save_img_freq=1000)
 
             # denormalize
             inp_pts_denorm = inp_pts.clone() * std + m
@@ -276,7 +301,7 @@ class Trainer(BaseTrainer):
         d = {
             'opt_enc': self.opt_enc.state_dict(),
             'opt_dec': self.opt_dec.state_dict(),
-            'sn': self.score_net.state_dict(),
+            'vn': self.vnet.state_dict(),
             'enc': self.encoder.state_dict(),
             'epoch': epoch,
             'step': step
@@ -290,49 +315,63 @@ class Trainer(BaseTrainer):
     def resume(self, path, strict=True, **kwargs):
         ckpt = torch.load(path)
         self.encoder.load_state_dict(ckpt['enc'], strict=strict)
-        self.score_net.load_state_dict(ckpt['sn'], strict=strict)
+        self.vnet.load_state_dict(ckpt['vn'], strict=strict)
         self.opt_enc.load_state_dict(ckpt['opt_enc'])
         self.opt_dec.load_state_dict(ckpt['opt_dec'])
         start_epoch = ckpt['epoch']
         return start_epoch
 
-    def langevin_dynamics(self, z, num_points=2048):
-        with torch.no_grad():
-            assert hasattr(self.cfg, "inference")
-            step_size_ratio = float(getattr(
-                self.cfg.inference, "step_size_ratio", 1))
-            num_steps = int(getattr(self.cfg.inference, "num_steps", 5))
-            num_points = int(getattr(
-                self.cfg.inference, "num_points", num_points))
-            weight = float(getattr(self.cfg.inference, "weight", 1))
-            sigmas = self.sigmas
+    # def langevin_dynamics(self, z, num_points=2048):
+    #     with torch.no_grad():
+    #         assert hasattr(self.cfg, "inference")
+    #         step_size_ratio = float(getattr(
+    #             self.cfg.inference, "step_size_ratio", 1))
+    #         num_steps = int(getattr(self.cfg.inference, "num_steps", 5))
+    #         num_points = int(getattr(
+    #             self.cfg.inference, "num_points", num_points))
+    #         weight = float(getattr(self.cfg.inference, "weight", 1))
+    #         sigmas = self.sigmas
 
-            x_list = []
-            self.score_net.eval()
-            x = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
-            x = x.to(z)
-            x_list.append(x.clone())
-            for sigma in sigmas:
-                sigma = torch.ones((1,)).cuda() * sigma
-                z_sigma = torch.cat((z, sigma.expand(z.size(0), 1)), dim=1)
-                step_size = 2 * sigma ** 2 * step_size_ratio
-                for t in range(num_steps):
-                    z_t = torch.randn_like(x) * weight
-                    x += torch.sqrt(step_size) * z_t
-                    grad = self.score_net(x, z_sigma)
-                    grad = grad / sigma ** 2
-                    x += 0.5 * step_size * grad
-                x_list.append(x.clone())
-        return x, x_list
+    #         x_list = []
+    #         self.score_net.eval()
+    #         x = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
+    #         x = x.to(z)
+    #         x_list.append(x.clone())
+    #         for sigma in sigmas:
+    #             sigma = torch.ones((1,)).cuda() * sigma
+    #             z_sigma = torch.cat((z, sigma.expand(z.size(0), 1)), dim=1)
+    #             step_size = 2 * sigma ** 2 * step_size_ratio
+    #             for t in range(num_steps):
+    #                 z_t = torch.randn_like(x) * weight
+    #                 x += torch.sqrt(step_size) * z_t
+    #                 grad = self.score_net(x, z_sigma)
+    #                 grad = grad / sigma ** 2
+    #                 x += 0.5 * step_size * grad
+    #             x_list.append(x.clone())
+    #     return x, x_list
+    def generate_sample(z, num_points, n_timesteps, save_img_freq=250):
+        # img_t = torch.randn(1, self.cfg.models.encoder.zdim).cuda()
+        img_t = z.cuda()
+        imgs = [img_t]
+        timestamps = [0]
+        with torch.no_grad():
+            self.vnet.eval()
+            for t in range(n_timesteps):
+                t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
+                img_t = img_t + self.vnet(img_t, t_) * 1. / n_timesteps
+                if t % save_img_freq == 0:
+                    imgs.append(img_t.clone())
+                    timestamps.append(t)
+        return img_t, imgs, timestamps
 
     def sample(self, num_shapes=1, num_points=2048):
         with torch.no_grad():
             z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
-            return self.langevin_dynamics(z, num_points=num_points)
+            return self.generate_sample(z, num_points=num_points)
 
-    def reconstruct(self, inp, num_points=2048):
+    def reconstruct(self, inp, num_points=2048, save_img_freq=200):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            return self.langevin_dynamics(z, num_points=num_points)
+            return self.generate_sample(z, num_points=num_points, save_img_freq=save_img_freq)
 
