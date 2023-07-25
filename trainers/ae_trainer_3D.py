@@ -61,7 +61,10 @@ def flow_matching_loss(vnet, data, noise):
     data_t = inter_data
     eps_recon = vnet(data_t, t)
     loss = ((target - eps_recon)**2).mean(dim=list(range(1, len(data.shape))))
-    return loss.mean()
+    return {
+        "loss": loss,
+        "x": inter_data
+    }
 
 class Trainer(BaseTrainer):
 
@@ -156,7 +159,8 @@ class Trainer(BaseTrainer):
         # z = torch.cat((z, used_sigmas), dim=1)
 
         noise = torch.randn(len(tr_pts), tr_pts.shape[1], tr_pts.shape[2])
-        loss = flow_matching_loss(self.vnet, tr_pts, noise)
+        res = flow_matching_loss(self.vnet, tr_pts, noise)
+        loss = res['loss']
         if not no_update:
             loss.backward()
             self.opt_enc.step()
@@ -197,7 +201,7 @@ class Trainer(BaseTrainer):
 
                 print("Recon:")
                 rec, rec_list, timestamps = self.reconstruct(
-                    inp[:num_vis].cuda(), num_points=inp.size(1))
+                    inp[:num_vis].cuda(), num_points=inp.size(1), n_timesteps=1000)
                 # print("Ground truth recon:")
                 # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                 #     inp[:num_vis].cuda(), self.cfg)
@@ -369,9 +373,9 @@ class Trainer(BaseTrainer):
             z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
             return self.generate_sample(z, num_points=num_points)
 
-    def reconstruct(self, inp, num_points=2048, save_img_freq=200):
+    def reconstruct(self, inp, num_points=2048, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            return self.generate_sample(z, num_points=num_points, save_img_freq=save_img_freq)
+            return self.generate_sample(z, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
 

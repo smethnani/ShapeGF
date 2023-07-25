@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import numpy as np
 
 class ResnetBlockConv1d(nn.Module):
     """ 1D-Convolutional ResNet block class.
@@ -35,7 +35,7 @@ class ResnetBlockConv1d(nn.Module):
 
         self.fc_0 = nn.Conv1d(size_in, size_h, 1)
         self.fc_1 = nn.Conv1d(size_h, size_out, 1)
-        # self.fc_c = nn.Conv1d(c_dim, size_out, 1)
+        self.fc_c = nn.Conv1d(c_dim, size_out, 1)
         self.actvn = nn.ReLU()
 
         if size_in == size_out:
@@ -46,7 +46,7 @@ class ResnetBlockConv1d(nn.Module):
         # Initialization
         nn.init.zeros_(self.fc_1.weight)
 
-    def forward(self, x):
+    def forward(self, x, c):
         net = self.fc_0(self.actvn(self.bn_0(x)))
         dx = self.fc_1(self.actvn(self.bn_1(net)))
 
@@ -55,7 +55,7 @@ class ResnetBlockConv1d(nn.Module):
         else:
             x_s = x
 
-        out = x_s + dx
+        out = x_s + dx + self.fc_c(c)
 
         return out
 
@@ -80,8 +80,9 @@ class Decoder(nn.Module):
         self.hidden_size = hidden_size = cfg.hidden_size
         self.n_blocks = n_blocks = cfg.n_blocks
 
-        # Input = Conditional = zdim (shape) + dim (xyz) + 1 (sigma)
-        c_dim = dim + 1
+        # Input = Conditional = zdim (shape) + dim (xyz)
+        c_dim = self.z_dim + dim
+        #print(f'cdim: {c_dim}')
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
             ResnetBlockConv1d(c_dim, hidden_size) for _ in range(n_blocks)
@@ -91,7 +92,7 @@ class Decoder(nn.Module):
         self.actvn_out = nn.ReLU()
 
     # This should have the same signature as the sig condition one
-    def forward(self, x):
+    def forward(self, x, t):
         """
         :param x: (bs, npoints, self.dim) Input coordinate (xyz)
         :param c: (bs, self.zdim + 1) Shape latent code + sigma
@@ -100,11 +101,28 @@ class Decoder(nn.Module):
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
 
-        # c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
-        # c_xyz = torch.cat([p, c_expand], dim=1)
-        net = self.conv_p(p)
+        time_emb = self.get_timestep_embedding(t, x.device) # (bs, self.zdim)
+        #print(f'p: {p.shape} temb: {time_emb.shape} dim: {self.dim} zdim: {self.z_dim}')
+        c_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
+        # c_expand = time_emb.expand(-1, -1, num_points)
+        c_xyz = torch.cat([p, c_expand], dim=1)
+        net = self.conv_p(c_xyz)
         for block in self.blocks:
-            net = block(net, p)
+            net = block(net, c_xyz)
         out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)
         return out
 
+    def get_timestep_embedding(self, timesteps, device):
+        assert len(timesteps.shape) == 1  # and timesteps.dtype == tf.int32
+
+        half_dim = self.z_dim // 2
+        emb = np.log(10000) / (half_dim - 1)
+        emb = torch.from_numpy(np.exp(np.arange(0, half_dim) * -emb)).float().to(device)
+        # emb = tf.range(num_embeddings, dtype=DEFAULT_DTYPE)[:, None] * emb[None, :]
+        emb = timesteps[:, None] * emb[None, :]
+        emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
+        if self.z_dim % 2 == 1:  # zero pad
+            # emb = tf.concat([emb, tf.zeros([num_embeddings, 1])], axis=1)
+            emb = nn.functional.pad(emb, (0, 1), "constant", 0)
+        assert emb.shape == torch.Size([timesteps.shape[0], self.z_dim])
+        return emb
