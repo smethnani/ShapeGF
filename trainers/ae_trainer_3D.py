@@ -155,7 +155,7 @@ class Trainer(BaseTrainer):
         #     np.array(self.sigmas))[labels].float().view(batch_size, 1).cuda()
         # z = torch.cat((z, used_sigmas), dim=1)
 
-        noise = torch.randn(len(tr_points), tr_points.shape[1], tr_points.shape[2])
+        noise = torch.randn(len(tr_pts), tr_pts.shape[1], tr_pts.shape[2])
         loss = flow_matching_loss(self.vnet, tr_pts, noise)
         if not no_update:
             loss.backward()
