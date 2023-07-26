@@ -75,6 +75,7 @@ class Decoder(nn.Module):
         super().__init__()
         self.cfg = cfg
         self.z_dim = z_dim = cfg.z_dim
+        self.t_dim = t_dim = cfg.t_dim
         self.dim = dim = cfg.dim
         self.out_dim = out_dim = cfg.out_dim
         self.hidden_size = hidden_size = cfg.hidden_size
@@ -82,17 +83,18 @@ class Decoder(nn.Module):
 
         # Input = Conditional = zdim (shape) + dim (xyz)
         c_dim = self.z_dim + dim
+        r_dim = c_dim + self.t_dim
         #print(f'cdim: {c_dim}')
-        self.conv_p = nn.Conv1d(dim, hidden_size, 1)
+        self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
-            ResnetBlockConv1d(c_dim, hidden_size) for _ in range(n_blocks)
+            ResnetBlockConv1d(r_dim, hidden_size) for _ in range(n_blocks)
         ])
         self.bn_out = nn.BatchNorm1d(hidden_size)
         self.conv_out = nn.Conv1d(hidden_size, out_dim, 1)
         self.actvn_out = nn.ReLU()
 
     # This should have the same signature as the sig condition one
-    def forward(self, x, t):
+    def forward(self, x, c, t):
         """
         :param x: (bs, npoints, self.dim) Input coordinate (xyz)
         :param c: (bs, self.zdim + 1) Shape latent code + sigma
@@ -102,14 +104,18 @@ class Decoder(nn.Module):
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
 
-        #print(f'p: {p.shape} temb: {time_emb.shape} dim: {self.dim} zdim: {self.z_dim}')
-        # c_expand = time_emb.expand(-1, -1, num_points)
-        net = self.conv_p(p)
-        time_emb = self.get_timestep_embedding(t, t.device) # (bs, self.zdim)
-        c_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
+        c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
         c_xyz = torch.cat([p, c_expand], dim=1)
+        print(f'p: {p.shape} c_xyz: {c_xyz.shape} dim: {self.dim} zdim: {self.z_dim}')
+        net = self.conv_p(c_xyz)
+
+        time_emb = self.get_timestep_embedding(t, t.device) # (bs, self.zdim)
+        t_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
+        r_xyz = torch.cat([p, c_expand, t_expand], dim=1)
+        print(f'temb: {t_expand.shape} r_xyz: {r_xyz.shape} dim: {self.dim} zdim: {self.t_dim}')
+
         for block in self.blocks:
-            net = block(net, c_xyz)
+            net = block(net, r_xyz)
         out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)
         return out
 
