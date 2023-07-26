@@ -352,8 +352,8 @@ class Trainer(BaseTrainer):
 
     def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
         print(f'z shape: {z.shape}')
-        x = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
-        x = x.to(z)
+        img_t = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
+        img_t = img_t.to(z)
         imgs = []
         timestamps = []
         with torch.no_grad():
