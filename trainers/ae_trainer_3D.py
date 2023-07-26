@@ -75,11 +75,11 @@ class Trainer(BaseTrainer):
         print("VNet:")
         print(self.vnet)
 
-        encoder_lib = importlib.import_module(cfg.models.encoder.type)
-        self.encoder = encoder_lib.Encoder(cfg.models.encoder)
-        self.encoder.cuda()
-        print("Encoder:")
-        print(self.encoder)
+        # encoder_lib = importlib.import_module(cfg.models.encoder.type)
+        # self.encoder = encoder_lib.Encoder(cfg.models.encoder)
+        # self.encoder.cuda()
+        # print("Encoder:")
+        # print(self.encoder)
 
         # The optimizer
         if not (hasattr(self.cfg.trainer, "opt_enc") and
@@ -87,8 +87,8 @@ class Trainer(BaseTrainer):
             self.cfg.trainer.opt_enc = self.cfg.trainer.opt
             self.cfg.trainer.opt_dec = self.cfg.trainer.opt
 
-        self.opt_enc, self.scheduler_enc = get_opt(
-            self.encoder.parameters(), self.cfg.trainer.opt_enc)
+        # self.opt_enc, self.scheduler_enc = get_opt(
+        #     self.encoder.parameters(), self.cfg.trainer.opt_enc)
         self.opt_dec, self.scheduler_dec = get_opt(
             self.vnet.parameters(), self.cfg.trainer.opt_dec)
 
@@ -114,7 +114,7 @@ class Trainer(BaseTrainer):
         self.oracle_res = None
 
     def multi_gpu_wrapper(self, wrapper):
-        self.encoder = wrapper(self.encoder)
+        # self.encoder = wrapper(self.encoder)
         self.vnet = wrapper(self.vnet)
 
     def epoch_end(self, epoch, writer=None, **kwargs):
@@ -135,15 +135,15 @@ class Trainer(BaseTrainer):
         else:
             no_update = False
         if not no_update:
-            self.encoder.train()
+            # self.encoder.train()
             self.vnet.train()
             self.opt_enc.zero_grad()
             self.opt_dec.zero_grad()
 
         tr_pts = data['tr_points'].cuda()  # (B, #points, 3)smn_ae_trainer.py
-        batch_size = tr_pts.size(0)
-        z_mu, z_sigma = self.encoder(tr_pts)
-        z = z_mu + 0 * z_sigma
+        # batch_size = tr_pts.size(0)
+        # z_mu, z_sigma = self.encoder(tr_pts)
+        # z = z_mu + 0 * z_sigma
 
         # Randomly sample sigma
         # labels = torch.randint(
@@ -300,7 +300,7 @@ class Trainer(BaseTrainer):
             'opt_enc': self.opt_enc.state_dict(),
             'opt_dec': self.opt_dec.state_dict(),
             'vn': self.vnet.state_dict(),
-            'enc': self.encoder.state_dict(),
+            # 'enc': self.encoder.state_dict(),
             'epoch': epoch,
             'step': step
         }
@@ -312,7 +312,7 @@ class Trainer(BaseTrainer):
 
     def resume(self, path, strict=True, **kwargs):
         ckpt = torch.load(path)
-        self.encoder.load_state_dict(ckpt['enc'], strict=strict)
+        # self.encoder.load_state_dict(ckpt['enc'], strict=strict)
         self.vnet.load_state_dict(ckpt['vn'], strict=strict)
         self.opt_enc.load_state_dict(ckpt['opt_enc'])
         self.opt_dec.load_state_dict(ckpt['opt_dec'])
@@ -367,15 +367,15 @@ class Trainer(BaseTrainer):
 
     def sample(self, num_shapes=1):
         with torch.no_grad():
-            z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
+            # z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
             return self.generate_sample(z, device=z.device)
 
     def reconstruct(self, inp, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():
-            self.encoder.eval()
-            z, _ = self.encoder(inp)
+            # self.encoder.eval()
+            # z, _ = self.encoder(inp)
             x = get_prior(inp.shape[0], inp.shape[1], self.cfg.models.scorenet.dim)
             x = x.to(inp)
-            #print(f'prior: {x.shape}')
+            print(f'prior: {z.shape}')
             return self.generate_sample(x, device=x.device, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
 
