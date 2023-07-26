@@ -350,29 +350,30 @@ class Trainer(BaseTrainer):
     def new_x_chain(self, x, num_chain):
         return torch.randn(num_chain, *x.shape[1:], device=x.device)
 
-    def generate_sample(self, z, device, n_timesteps, save_img_freq=250):
+    def generate_sample(self, z, n_timesteps, save_img_freq=250):
         print(f'z shape: {z.shape}')
-        img_t = z.cuda()
+        x = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
+        x = x.to(z)
         imgs = []
         timestamps = []
         with torch.no_grad():
             self.vnet.eval()
             for t in range(n_timesteps):
-                t_ = torch.empty(z.shape[0], dtype=torch.int64, device=device).fill_(t)
+                t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
                 img_t = img_t + self.vnet(img_t, z, t_) * 1. / n_timesteps
                 if t % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
         return img_t, imgs, timestamps
 
-    def sample(self, num_shapes=1):
+    def sample(self, num_shapes=1, num_points=2048):
         with torch.no_grad():
             # z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
-            return self.generate_sample(z, device=z.device)
+            return self.generate_sample(z, num_points=num_points)
 
-    def reconstruct(self, inp, n_timesteps=1000, save_img_freq=200):
+    def reconstruct(self, inp, num_points=2048, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            return self.generate_sample(z, device=z.device, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
+            return self.generate_sample(z, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
 
