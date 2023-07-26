@@ -102,7 +102,7 @@ class Decoder(nn.Module):
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
 
-        time_emb = self.get_timestep_embedding(t, x.device) # (bs, self.zdim)
+        time_emb = self.get_timestep_embedding(t, t.device) # (bs, self.zdim)
         #print(f'p: {p.shape} temb: {time_emb.shape} dim: {self.dim} zdim: {self.z_dim}')
         c_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
         # c_expand = time_emb.expand(-1, -1, num_points)
