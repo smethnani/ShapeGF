@@ -243,7 +243,7 @@ class Trainer(BaseTrainer):
             inp_pts = data['tr_points'].cuda()
             m = data['mean'].cuda()
             std = data['std'].cuda()
-            print(f'inp_pts: {inp_pts.shape}')
+            #print(f'inp_pts: {inp_pts.shape}')
             rec_pts, _, _ = self.reconstruct(inp_pts, save_img_freq=1000)
 
             # denormalize
@@ -376,6 +376,6 @@ class Trainer(BaseTrainer):
             z, _ = self.encoder(inp)
             x = get_prior(inp.shape[0], inp.shape[1], self.cfg.models.scorenet.dim)
             x = x.to(inp)
-            print(f'prior: {x.shape}')
+            #print(f'prior: {x.shape}')
             return self.generate_sample(x, device=x.device, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
 
