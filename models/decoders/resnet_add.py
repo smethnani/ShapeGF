@@ -83,7 +83,7 @@ class Decoder(nn.Module):
         # Input = Conditional = zdim (shape) + dim (xyz)
         c_dim = self.z_dim + dim
         #print(f'cdim: {c_dim}')
-        self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
+        self.conv_p = nn.Conv1d(dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
             ResnetBlockConv1d(c_dim, hidden_size) for _ in range(n_blocks)
         ])
@@ -102,12 +102,12 @@ class Decoder(nn.Module):
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
 
-        time_emb = self.get_timestep_embedding(t, t.device) # (bs, self.zdim)
         #print(f'p: {p.shape} temb: {time_emb.shape} dim: {self.dim} zdim: {self.z_dim}')
-        c_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
         # c_expand = time_emb.expand(-1, -1, num_points)
+        net = self.conv_p(p)
+        time_emb = self.get_timestep_embedding(t, t.device) # (bs, self.zdim)
+        c_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
         c_xyz = torch.cat([p, c_expand], dim=1)
-        net = self.conv_p(c_xyz)
         for block in self.blocks:
             net = block(net, c_xyz)
         out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)

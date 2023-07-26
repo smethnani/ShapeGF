@@ -40,30 +40,24 @@ except Exception as e:  # noqa
 #         "x": perturbed_points
 #     }
 
-def sample_pairs(data, x0 = None):
-    if x0 is None:
-        x0 = torch.randn_like(data)
-    z0 = x0
-    t = torch.rand((data.shape[0], 1, 1)).to(data.device)
-    inter_data = t * data + (1.-t) * z0
-    target = data - z0
-    return inter_data, t * 999, target
+def sample_pairs(x1, x0=None):
+    t = torch.rand((x1.shape[0], 1, 1)).to(x1.device)
+    xt = t * x1 + (1.-t) * x0
+    target = x1 - x0
+    return xt, t * 999, target
 
-def flow_matching_loss(vnet, data, noise):
+def flow_matching_loss(vnet, data, noise=None):
     B, D, N = data.shape
-    t = torch.randint(0, 1000, size=(B,), device=data.device)
-
-    if noise is not None:
-        noise[t!=0] = torch.randn((t!=0).sum(), *noise.shape[1:]).to(noise)
-
-    inter_data, t, target = sample_pairs(data)
+    if noise is None:
+        noise = torch.randn_like(data)
+        
+    xt, t, target = sample_pairs(x1=data, x0=noise)
     t = t.squeeze()
-    data_t = inter_data
-    eps_recon = vnet(data_t, t)
+    eps_recon = vnet(xt, t)
     loss = ((target - eps_recon)**2).mean(dim=list(range(1, len(data.shape))))
     return {
         "loss": loss.mean(),
-        "x": inter_data
+        "x": xt
     }
 
 class Trainer(BaseTrainer):
@@ -359,8 +353,8 @@ class Trainer(BaseTrainer):
     def generate_sample(self, z, device, n_timesteps, save_img_freq=250):
         # img_t = torch.randn(1, self.cfg.models.encoder.zdim).cuda()
         img_t = z.cuda()
-        imgs = [img_t]
-        timestamps = [0]
+        imgs = []
+        timestamps = []
         with torch.no_grad():
             self.vnet.eval()
             for t in range(n_timesteps):
