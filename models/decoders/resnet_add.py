@@ -122,14 +122,14 @@ class Decoder(nn.Module):
     def get_timestep_embedding(self, timesteps, device):
         assert len(timesteps.shape) == 1  # and timesteps.dtype == tf.int32
 
-        half_dim = self.z_dim // 2
+        half_dim = self.t_dim // 2
         emb = np.log(10000) / (half_dim - 1)
         emb = torch.from_numpy(np.exp(np.arange(0, half_dim) * -emb)).float().to(device)
         # emb = tf.range(num_embeddings, dtype=DEFAULT_DTYPE)[:, None] * emb[None, :]
         emb = timesteps[:, None] * emb[None, :]
         emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
-        if self.z_dim % 2 == 1:  # zero pad
+        if self.t_dim % 2 == 1:  # zero pad
             # emb = tf.concat([emb, tf.zeros([num_embeddings, 1])], axis=1)
             emb = nn.functional.pad(emb, (0, 1), "constant", 0)
-        assert emb.shape == torch.Size([timesteps.shape[0], self.z_dim])
+        assert emb.shape == torch.Size([timesteps.shape[0], self.t_dim])
         return emb
