@@ -352,9 +352,7 @@ class Trainer(BaseTrainer):
 
     def generate_sample(self, z, device, n_timesteps, save_img_freq=250):
         print(f'z shape: {z.shape}')
-        # img_t = get_prior(z.shape[0], z.shape[1], self.cfg.models.scorenet.dim)
-        img_t = img_t.to(z)
-        # img_t = z.cuda()
+        img_t = z.cuda()
         imgs = []
         timestamps = []
         with torch.no_grad():
