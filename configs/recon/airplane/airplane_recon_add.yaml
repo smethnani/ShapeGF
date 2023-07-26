@@ -16,7 +16,7 @@ viz:
   log_freq: 10
   viz_freq: 1000
   save_freq: 100
-  val_freq: 100
+  val_freq: 500
 
 trainer:
   type: trainers.ae_trainer_3D
