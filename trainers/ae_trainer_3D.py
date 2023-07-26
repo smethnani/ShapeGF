@@ -350,7 +350,7 @@ class Trainer(BaseTrainer):
     def new_x_chain(self, x, num_chain):
         return torch.randn(num_chain, *x.shape[1:], device=x.device)
 
-    def generate_sample(self, z, n_timesteps, save_img_freq=250):
+    def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
         print(f'z shape: {z.shape}')
         x = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
         x = x.to(z)
