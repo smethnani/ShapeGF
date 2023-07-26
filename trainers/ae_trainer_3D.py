@@ -200,7 +200,7 @@ class Trainer(BaseTrainer):
                     gtr.size(0))
 
                 print("Recon:")
-                rec, rec_list, timestamps = self.reconstruct(inp=inp[:num_vis].cuda(), num_points=inp.size(1), n_timesteps=1000)
+                rec, rec_list, timestamps = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000)
                 # print("Ground truth recon:")
                 # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                 #     inp[:num_vis].cuda(), self.cfg)
@@ -249,7 +249,8 @@ class Trainer(BaseTrainer):
             inp_pts = data['tr_points'].cuda()
             m = data['mean'].cuda()
             std = data['std'].cuda()
-            rec_pts, _, _ = self.reconstruct(inp_pts, num_points=inp_pts.size(1), save_img_freq=1000)
+            print(f'inp_pts: {inp_pts.shape}')
+            rec_pts, _, _ = self.reconstruct(inp_pts, save_img_freq=1000)
 
             # denormalize
             inp_pts_denorm = inp_pts.clone() * std + m
@@ -352,7 +353,10 @@ class Trainer(BaseTrainer):
     #                 x += 0.5 * step_size * grad
     #             x_list.append(x.clone())
     #     return x, x_list
-    def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
+    def new_x_chain(self, x, num_chain):
+        return torch.randn(num_chain, *x.shape[1:], device=x.device)
+
+    def generate_sample(self, z, n_timesteps, save_img_freq=250):
         # img_t = torch.randn(1, self.cfg.models.encoder.zdim).cuda()
         img_t = z.cuda()
         imgs = [img_t]
@@ -360,21 +364,23 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             self.vnet.eval()
             for t in range(n_timesteps):
-                t_ = torch.empty(shape[0], dtype=torch.int64, device=device).fill_(t)
+                t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
                 img_t = img_t + self.vnet(img_t, t_) * 1. / n_timesteps
                 if t % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
         return img_t, imgs, timestamps
 
-    def sample(self, num_shapes=1, num_points=2048):
+    def sample(self, num_shapes=1):
         with torch.no_grad():
             z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
-            return self.generate_sample(z, num_points=num_points)
+            return self.generate_sample(z)
 
-    def reconstruct(self, inp, num_points=2048, n_timesteps=1000, save_img_freq=200):
+    def reconstruct(self, inp, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            return self.generate_sample(z, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
+            x = get_prior(inp.shape[0], inp.shape[1], self.cfg.models.scorenet.dim)
+            print(f'prior: {x.shape}')
+            return self.generate_sample(x, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
 
