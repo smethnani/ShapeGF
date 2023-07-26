@@ -46,14 +46,14 @@ def sample_pairs(x1, x0=None):
     target = x1 - x0
     return xt, t * 999, target
 
-def flow_matching_loss(vnet, data, noise=None):
+def flow_matching_loss(vnet, z, data, noise=None):
     B, D, N = data.shape
     if noise is None:
         noise = torch.randn_like(data)
         
     xt, t, target = sample_pairs(x1=data, x0=noise)
     t = t.squeeze()
-    eps_recon = vnet(xt, t)
+    eps_recon = vnet(xt, z, t)
     loss = ((target - eps_recon)**2).mean(dim=list(range(1, len(data.shape))))
     return {
         "loss": loss.mean(),
@@ -75,11 +75,11 @@ class Trainer(BaseTrainer):
         print("VNet:")
         print(self.vnet)
 
-        # encoder_lib = importlib.import_module(cfg.models.encoder.type)
-        # self.encoder = encoder_lib.Encoder(cfg.models.encoder)
-        # self.encoder.cuda()
-        # print("Encoder:")
-        # print(self.encoder)
+        encoder_lib = importlib.import_module(cfg.models.encoder.type)
+        self.encoder = encoder_lib.Encoder(cfg.models.encoder)
+        self.encoder.cuda()
+        print("Encoder:")
+        print(self.encoder)
 
         # The optimizer
         if not (hasattr(self.cfg.trainer, "opt_enc") and
@@ -87,8 +87,8 @@ class Trainer(BaseTrainer):
             self.cfg.trainer.opt_enc = self.cfg.trainer.opt
             self.cfg.trainer.opt_dec = self.cfg.trainer.opt
 
-        # self.opt_enc, self.scheduler_enc = get_opt(
-        #     self.encoder.parameters(), self.cfg.trainer.opt_enc)
+        self.opt_enc, self.scheduler_enc = get_opt(
+            self.encoder.parameters(), self.cfg.trainer.opt_enc)
         self.opt_dec, self.scheduler_dec = get_opt(
             self.vnet.parameters(), self.cfg.trainer.opt_dec)
 
@@ -114,7 +114,7 @@ class Trainer(BaseTrainer):
         self.oracle_res = None
 
     def multi_gpu_wrapper(self, wrapper):
-        # self.encoder = wrapper(self.encoder)
+        self.encoder = wrapper(self.encoder)
         self.vnet = wrapper(self.vnet)
 
     def epoch_end(self, epoch, writer=None, **kwargs):
@@ -135,15 +135,15 @@ class Trainer(BaseTrainer):
         else:
             no_update = False
         if not no_update:
-            # self.encoder.train()
+            self.encoder.train()
             self.vnet.train()
             self.opt_enc.zero_grad()
             self.opt_dec.zero_grad()
 
         tr_pts = data['tr_points'].cuda()  # (B, #points, 3)smn_ae_trainer.py
-        # batch_size = tr_pts.size(0)
-        # z_mu, z_sigma = self.encoder(tr_pts)
-        # z = z_mu + 0 * z_sigma
+        batch_size = tr_pts.size(0)
+        z_mu, _ = self.encoder(tr_pts)
+        z = z_mu
 
         # Randomly sample sigma
         # labels = torch.randint(
@@ -153,7 +153,7 @@ class Trainer(BaseTrainer):
         # z = torch.cat((z, used_sigmas), dim=1)
 
         noise = torch.randn(len(tr_pts), tr_pts.shape[1], tr_pts.shape[2])
-        res = flow_matching_loss(self.vnet, tr_pts, noise)
+        res = flow_matching_loss(self.vnet, z, tr_pts, noise)
         loss = res['loss']
         if not no_update:
             loss.backward()
@@ -300,7 +300,7 @@ class Trainer(BaseTrainer):
             'opt_enc': self.opt_enc.state_dict(),
             'opt_dec': self.opt_dec.state_dict(),
             'vn': self.vnet.state_dict(),
-            # 'enc': self.encoder.state_dict(),
+            'enc': self.encoder.state_dict(),
             'epoch': epoch,
             'step': step
         }
@@ -312,7 +312,7 @@ class Trainer(BaseTrainer):
 
     def resume(self, path, strict=True, **kwargs):
         ckpt = torch.load(path)
-        # self.encoder.load_state_dict(ckpt['enc'], strict=strict)
+        self.encoder.load_state_dict(ckpt['enc'], strict=strict)
         self.vnet.load_state_dict(ckpt['vn'], strict=strict)
         self.opt_enc.load_state_dict(ckpt['opt_enc'])
         self.opt_dec.load_state_dict(ckpt['opt_dec'])
@@ -351,15 +351,17 @@ class Trainer(BaseTrainer):
         return torch.randn(num_chain, *x.shape[1:], device=x.device)
 
     def generate_sample(self, z, device, n_timesteps, save_img_freq=250):
-        # img_t = torch.randn(1, self.cfg.models.encoder.zdim).cuda()
-        img_t = z.cuda()
+        print(f'z shape: {z.shape}')
+        # img_t = get_prior(z.shape[0], z.shape[1], self.cfg.models.scorenet.dim)
+        img_t = img_t.to(z)
+        # img_t = z.cuda()
         imgs = []
         timestamps = []
         with torch.no_grad():
             self.vnet.eval()
             for t in range(n_timesteps):
                 t_ = torch.empty(z.shape[0], dtype=torch.int64, device=device).fill_(t)
-                img_t = img_t + self.vnet(img_t, t_) * 1. / n_timesteps
+                img_t = img_t + self.vnet(img_t, z, t_) * 1. / n_timesteps
                 if t % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
@@ -372,10 +374,7 @@ class Trainer(BaseTrainer):
 
     def reconstruct(self, inp, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():
-            # self.encoder.eval()
-            # z, _ = self.encoder(inp)
-            x = get_prior(inp.shape[0], inp.shape[1], self.cfg.models.scorenet.dim)
-            x = x.to(inp)
-            print(f'prior: {z.shape}')
-            return self.generate_sample(x, device=x.device, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
+            self.encoder.eval()
+            z, _ = self.encoder(inp)
+            return self.generate_sample(z, device=z.device, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
 
