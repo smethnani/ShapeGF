@@ -27,7 +27,7 @@ trainer:
   sigma_num: 10
   opt_dec:
     type: 'adam'
-    lr: 1e-3  #  use bs*1e-5/8
+    lr: 1e-4  #  use bs*1e-5/8
     beta1: 0.9
     beta2: 0.999
     momentum: 0.9  # for SGD
@@ -36,7 +36,7 @@ trainer:
     step_epoch: 2000
   opt_enc:
     type: 'adam'
-    lr: 1e-3
+    lr: 1e-4
     beta1: 0.9
     beta2: 0.999
     momentum: 0.9  # for SGD
