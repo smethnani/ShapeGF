@@ -50,7 +50,7 @@ def flow_matching_loss(vnet, z, data, noise=None):
     B, D, N = data.shape
     if noise is None:
         noise = torch.randn_like(data)
-        
+    noise = noise.to(data)
     xt, t, target = sample_pairs(x1=data, x0=noise)
     t = t.squeeze()
     eps_recon = vnet(xt, z, t)
