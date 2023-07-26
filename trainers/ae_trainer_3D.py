@@ -200,8 +200,7 @@ class Trainer(BaseTrainer):
                     gtr.size(0))
 
                 print("Recon:")
-                rec, rec_list, timestamps = self.reconstruct(
-                    inp[:num_vis].cuda(), num_points=inp.size(1), n_timesteps=1000)
+                rec, rec_list, timestamps = self.reconstruct(inp=inp[:num_vis].cuda(), num_points=inp.size(1), n_timesteps=1000)
                 # print("Ground truth recon:")
                 # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                 #     inp[:num_vis].cuda(), self.cfg)
@@ -353,7 +352,7 @@ class Trainer(BaseTrainer):
     #                 x += 0.5 * step_size * grad
     #             x_list.append(x.clone())
     #     return x, x_list
-    def generate_sample(z, num_points, n_timesteps, save_img_freq=250):
+    def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
         # img_t = torch.randn(1, self.cfg.models.encoder.zdim).cuda()
         img_t = z.cuda()
         imgs = [img_t]
