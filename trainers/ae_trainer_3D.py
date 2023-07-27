@@ -303,7 +303,7 @@ class Trainer(BaseTrainer):
 
         return all_res
 
-    def save(self, epoch=None, step=None, appendix=None, **kwargs):
+    def save(self, epoch=None, step=None, appendix=None, wandb_run=None, **kwargs):
         d = {
             'opt_enc': self.opt_enc.state_dict(),
             'opt_dec': self.opt_dec.state_dict(),
@@ -317,6 +317,10 @@ class Trainer(BaseTrainer):
         save_name = "epoch_%s_iters_%s.pt" % (epoch, step)
         path = os.path.join(self.cfg.save_dir, "checkpoints", save_name)
         torch.save(d, path)
+        if wandb_run is not None:
+            artifact = wandb.Artifact(save_name, type='model')
+            artifact.add_file(path)
+            wandb_run.log_artifact(artifact)
 
     def resume(self, path, strict=True, **kwargs):
         ckpt = torch.load(path)

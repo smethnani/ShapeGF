@@ -83,7 +83,7 @@ def get_args():
     return args, config
 
 
-def main_worker(cfg, args):
+def main_worker(cfg, args, wandb_run=None):
     # basic setup
     cudnn.benchmark = True
     writer = SummaryWriter(log_dir=cfg.log_name)
@@ -134,7 +134,7 @@ def main_worker(cfg, args):
         # we still have something
         if (epoch + 1) % int(cfg.viz.save_freq) == 0 and \
                 int(cfg.viz.save_freq) > 0:
-            trainer.save(epoch=epoch, step=step)
+            trainer.save(epoch=epoch, step=step, wandb_run=wandb_run)
 
         if (epoch + 1) % int(cfg.viz.val_freq) == 0 and \
                 int(cfg.viz.val_freq) > 0:
@@ -155,8 +155,8 @@ if __name__ == '__main__':
     print("Configuration:")
     print(cfg)
 
-    wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True)
+    run = wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True)
 
-    main_worker(cfg, args)
+    main_worker(cfg, args, wandb_run=run)
 
-    wandb.finish()
+    run.finish()
