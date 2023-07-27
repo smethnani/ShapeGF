@@ -207,6 +207,9 @@ class Trainer(BaseTrainer):
                 # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                 #     inp[:num_vis].cuda(), self.cfg)
 
+                print(f'Gtr: min: {gtr[:num_vis].min()} max: {gtr[:num_vis].max()}, mean: {gtr[:num_vis].mean()}')
+                print(f'Rec: min: {rec.min()} max: {rec.max()}, mean: {rec.mean()}')
+
                 print("Saving Reconstructed point clouds")
                 generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
