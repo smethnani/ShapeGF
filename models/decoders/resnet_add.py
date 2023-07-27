@@ -4,7 +4,7 @@ import numpy as np
 
 def exists(x):
     return x is not None
-    
+
 class ResnetBlockConv1d(nn.Module):
     """ 1D-Convolutional ResNet block class.
     Args:
@@ -121,11 +121,11 @@ class Decoder(nn.Module):
         time_emb = self.get_timestep_embedding(t, t.device)  # (B, 1, tdim)
         # time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
         #print(f'c: {c.shape}, time_emb: {time_emb.shape}')
-        ctx_emb = torch.cat([c, time_emb], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
+        # ctx_emb = torch.cat([c, time_emb], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
-        c_expand = ctx_emb.unsqueeze(2).expand(-1, -1, num_points)
+        c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
         #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
-        c_xyz = torch.cat([p, c_expand], dim=1)
+        c_xyz = torch.cat([p, c_expand, time_emb], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
             net = block(net, c_xyz)
