@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+def exists(x):
+    return x is not None
+    
 class ResnetBlockConv1d(nn.Module):
     """ 1D-Convolutional ResNet block class.
     Args:
