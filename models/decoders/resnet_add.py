@@ -71,65 +71,108 @@ class Decoder(nn.Module):
         sigma_condition: True
         xyz_condition: True
     """
-    def __init__(self, _, cfg):
+
+        def __init__(self, _, cfg):
         super().__init__()
         self.cfg = cfg
         self.z_dim = z_dim = cfg.z_dim
-        self.t_dim = t_dim = cfg.t_dim
         self.dim = dim = cfg.dim
         self.out_dim = out_dim = cfg.out_dim
         self.hidden_size = hidden_size = cfg.hidden_size
         self.n_blocks = n_blocks = cfg.n_blocks
 
-        # Input = Conditional = zdim (shape) + dim (xyz)
-        c_dim = self.z_dim + dim
-        r_dim = c_dim + self.t_dim
-        #print(f'cdim: {c_dim}')
+        # Input = Conditional = zdim (shape) + dim (xyz) + 1 (sigma)
+        c_dim = z_dim + dim + 1
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
-            ResnetBlockConv1d(r_dim, hidden_size) for _ in range(n_blocks)
+            ResnetBlockConv1d(c_dim, hidden_size) for _ in range(n_blocks)
         ])
         self.bn_out = nn.BatchNorm1d(hidden_size)
         self.conv_out = nn.Conv1d(hidden_size, out_dim, 1)
         self.actvn_out = nn.ReLU()
 
     # This should have the same signature as the sig condition one
-    def forward(self, x, c, t):
+    def forward(self, x, context, t):
         """
         :param x: (bs, npoints, self.dim) Input coordinate (xyz)
         :param c: (bs, self.zdim + 1) Shape latent code + sigma
         :return: (bs, npoints, self.dim) Gradient (self.dim dimension)
         """
-        #print(f'x: {x.shape}')
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
 
-        c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
-        c_xyz = torch.cat([p, c_expand], dim=1)
-        #print(f'p: {p.shape} c_xyz: {c_xyz.shape} dim: {self.dim} zdim: {self.z_dim}')
+        t = t.view(batch_size, 1, 1)          # (B, 1, 1)
+        context = context.view(batch_size, 1, -1)   # (B, 1, F)
+
+        time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
+        ctx_emb = torch.cat([time_emb, context], dim=-1) 
+
+        # c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
+        c_xyz = torch.cat([p, ctx_emb], dim=1)
         net = self.conv_p(c_xyz)
-
-        time_emb = self.get_timestep_embedding(t, t.device) # (bs, self.zdim)
-        t_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
-        r_xyz = torch.cat([p, c_expand, t_expand], dim=1)
-        #print(f'temb: {t_expand.shape} r_xyz: {r_xyz.shape} dim: {self.dim} zdim: {self.t_dim}')
-
         for block in self.blocks:
-            net = block(net, r_xyz)
+            net = block(net, c_xyz)
         out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)
         return out
+    # def __init__(self, _, cfg):
+    #     super().__init__()
+    #     self.cfg = cfg
+    #     self.z_dim = z_dim = cfg.z_dim
+    #     self.t_dim = t_dim = cfg.t_dim
+    #     self.dim = dim = cfg.dim
+    #     self.out_dim = out_dim = cfg.out_dim
+    #     self.hidden_size = hidden_size = cfg.hidden_size
+    #     self.n_blocks = n_blocks = cfg.n_blocks
 
-    def get_timestep_embedding(self, timesteps, device):
-        assert len(timesteps.shape) == 1  # and timesteps.dtype == tf.int32
+    #     # Input = Conditional = zdim (shape) + dim (xyz)
+    #     c_dim = self.z_dim + dim
+    #     r_dim = c_dim + self.t_dim
+    #     #print(f'cdim: {c_dim}')
+    #     self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
+    #     self.blocks = nn.ModuleList([
+    #         ResnetBlockConv1d(r_dim, hidden_size) for _ in range(n_blocks)
+    #     ])
+    #     self.bn_out = nn.BatchNorm1d(hidden_size)
+    #     self.conv_out = nn.Conv1d(hidden_size, out_dim, 1)
+    #     self.actvn_out = nn.ReLU()
 
-        half_dim = self.t_dim // 2
-        emb = np.log(10000) / (half_dim - 1)
-        emb = torch.from_numpy(np.exp(np.arange(0, half_dim) * -emb)).float().to(device)
-        # emb = tf.range(num_embeddings, dtype=DEFAULT_DTYPE)[:, None] * emb[None, :]
-        emb = timesteps[:, None] * emb[None, :]
-        emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
-        if self.t_dim % 2 == 1:  # zero pad
-            # emb = tf.concat([emb, tf.zeros([num_embeddings, 1])], axis=1)
-            emb = nn.functional.pad(emb, (0, 1), "constant", 0)
-        assert emb.shape == torch.Size([timesteps.shape[0], self.t_dim])
-        return emb
+    # # This should have the same signature as the sig condition one
+    # def forward(self, x, c, t):
+    #     """
+    #     :param x: (bs, npoints, self.dim) Input coordinate (xyz)
+    #     :param c: (bs, self.zdim) Shape latent code
+    #     :param t: (bs, self.tdim) Time embedding
+    #     :return: (bs, npoints, self.dim) Gradient (self.dim dimension)
+    #     """
+    #     print(f't: {t.shape}')
+    #     p = x.transpose(1, 2)  # (bs, dim, n_points)
+    #     batch_size, D, num_points = p.size()
+
+    #     c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
+    #     time_emb = self.get_timestep_embedding(t, t.device)
+    #     c_xyz = torch.cat([p, c_expand], dim=1)
+    #     #print(f'p: {p.shape} c_xyz: {c_xyz.shape} dim: {self.dim} zdim: {self.z_dim}')
+    #     net = self.conv_p(c_xyz)
+
+    #     # t_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
+    #     r_xyz = torch.cat([p, c_expand, time_emb], dim=1)
+    #     #print(f'temb: {t_expand.shape} r_xyz: {r_xyz.shape} dim: {self.dim} zdim: {self.t_dim}')
+
+    #     for block in self.blocks:
+    #         net = block(net, r_xyz)
+    #     out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)
+    #     return out
+
+    # def get_timestep_embedding(self, timesteps, device):
+    #     assert len(timesteps.shape) == 1  # and timesteps.dtype == tf.int32
+
+    #     half_dim = self.t_dim // 2
+    #     emb = np.log(10000) / (half_dim - 1)
+    #     emb = torch.from_numpy(np.exp(np.arange(0, half_dim) * -emb)).float().to(device)
+    #     # emb = tf.range(num_embeddings, dtype=DEFAULT_DTYPE)[:, None] * emb[None, :]
+    #     emb = timesteps[:, None] * emb[None, :]
+    #     emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
+    #     if self.t_dim % 2 == 1:  # zero pad
+    #         emb = nn.functional.pad(emb, (0, 1), "constant", 0)
+    #     assert emb.shape == torch.Size([timesteps.shape[0], self.t_dim])
+    #     return emb

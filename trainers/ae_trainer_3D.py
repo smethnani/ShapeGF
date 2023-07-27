@@ -46,12 +46,20 @@ def sample_pairs(x1, x0=None):
     target = x1 - x0
     return xt, t * 999, target
 
+def get_train_tuple(z0=None, z1=None):
+    t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
+    z_t =  t * z1 + (1.-t) * z0
+    target = z1 - z0 
+        
+    return z_t, t, target
+
 def flow_matching_loss(vnet, z, data, noise=None):
     B, D, N = data.shape
     if noise is None:
         noise = torch.randn_like(data)
-    noise = noise.to(data)
-    xt, t, target = sample_pairs(x1=data, x0=noise)
+    noise = noise.to(data.device)
+    # xt, t, target = sample_pairs(x1=data, x0=noise)
+    xt, t, target = get_train_tuple(z0=noise, z1=data)
     t = t.squeeze()
     eps_recon = vnet(xt, z, t)
     loss = ((target - eps_recon)**2).mean(dim=list(range(1, len(data.shape))))
