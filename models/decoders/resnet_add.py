@@ -7,13 +7,12 @@ class Swish(nn.Module):
         return x * torch.sigmoid(x)
 
 class TimeEmbedding(nn.Module):
-    def __init__(self, t_dim: int, out_channels: int):
+    def __init__(self, t_dim: int):
         super().__init__()
         self.t_dim = t_dim
-        self.out_channels = out_channels
         self.lin1 = nn.Linear(self.t_dim // 4, self.t_dim)
         self.act = Swish()
-        self.lin2 = nn.Linear(self.t_dim, self.out_channels)
+        self.lin2 = nn.Linear(self.t_dim, self.t_dim)
 
     def forward(self, t: torch.Tensor):
         half_dim = self.t_dim // 8
@@ -118,7 +117,7 @@ class Decoder(nn.Module):
         self.n_blocks = n_blocks = cfg.n_blocks
 
         # Input = Conditional = zdim (shape) + dim (xyz) + tdim (time)
-        self.time_emb = TimeEmbedding(t_dim * 4, out_channels=hidden_size)
+        self.time_emb = TimeEmbedding(t_dim * 4)
         c_dim = z_dim + dim
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
