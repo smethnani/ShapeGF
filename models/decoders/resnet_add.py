@@ -10,9 +10,10 @@ class ResnetBlockConv1d(nn.Module):
         size_h (int): hidden dimension
     """
 
-    def __init__(self, c_dim, t_dim, size_in, size_h=None, size_out=None,
+    def __init__(self, c_dim, size_in, time_emb_dim=None, size_h=None, size_out=None,
                  norm_method='batch_norm', legacy=False):
         super().__init__()
+
         # Attributes
         if size_h is None:
             size_h = size_in
@@ -30,13 +31,17 @@ class ResnetBlockConv1d(nn.Module):
         else:
              raise Exception("Invalid norm method: %s" % norm_method)
 
+        self.mlp = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(time_emb_dim, size_out * 2)
+        ) if exists(time_emb_dim) else None
+
         self.bn_0 = norm(size_in)
         self.bn_1 = norm(size_h)
 
         self.fc_0 = nn.Conv1d(size_in, size_h, 1)
         self.fc_1 = nn.Conv1d(size_h, size_out, 1)
         self.fc_c = nn.Conv1d(c_dim, size_out, 1)
-        self.fc_t = nn.Linear(t_dim, size_out, 1)
         self.actvn = nn.ReLU()
 
         if size_in == size_out:
@@ -47,16 +52,23 @@ class ResnetBlockConv1d(nn.Module):
         # Initialization
         nn.init.zeros_(self.fc_1.weight)
 
-    def forward(self, x, c, t):
+    def forward(self, x, c, time_emb=None):
         net = self.fc_0(self.actvn(self.bn_0(x)))
         dx = self.fc_1(self.actvn(self.bn_1(net)))
+
 
         if self.shortcut is not None:
             x_s = self.shortcut(x)
         else:
             x_s = x
+        # scale_shift = None
+        if exists(self.mlp) and exists(time_emb):
+            time_emb = self.mlp(time_emb)
+            # time_emb = rearrange(time_emb, 'b c -> b c 1 1')
+            # scale_shift = time_emb.chunk(2, dim = 1)
+            x_s = x_s * time_emb
 
-        out = x_s + dx * self.fc_t(t) + self.fc_c(c)
+        out = x_s + dx + self.fc_c(c)
 
         return out
 
@@ -84,10 +96,10 @@ class Decoder(nn.Module):
         self.n_blocks = n_blocks = cfg.n_blocks
 
         # Input = Conditional = zdim (shape) + dim (xyz) + tdim (time)
-        c_dim = z_dim + dim
+        c_dim = z_dim + dim 
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
-            ResnetBlockConv1d(c_dim, t_dim, hidden_size) for _ in range(n_blocks)
+            ResnetBlockConv1d(c_dim, hidden_size, time_emb_dim=t_dim) for _ in range(n_blocks)
         ])
         self.bn_out = nn.BatchNorm1d(hidden_size)
         self.conv_out = nn.Conv1d(hidden_size, out_dim, 1)
@@ -106,15 +118,14 @@ class Decoder(nn.Module):
         time_emb = self.get_timestep_embedding(t, t.device)  # (B, 1, tdim)
         # time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
         #print(f'c: {c.shape}, time_emb: {time_emb.shape}')
-        # ctx_emb = torch.cat([c, time_emb], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
+        ctx_emb = torch.cat([c, time_emb], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
-        c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
+        c_expand = ctx_emb.unsqueeze(2).expand(-1, -1, num_points)
         #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
         c_xyz = torch.cat([p, c_expand], dim=1)
-        t_xyz = torch.cat([p, c_expand, time_emb], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
-            net = block(net, t_xyz)
+            net = block(net, c_xyz)
         out = self.conv_out(self.actvn_out(self.bn_out(net))).transpose(1, 2)
         return out
     # def __init__(self, _, cfg):
