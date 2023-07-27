@@ -77,10 +77,10 @@ class ResnetBlockConv1d(nn.Module):
 
     def forward(self, x, c, t):
         net = self.fc_0(self.actvn(self.bn_0(x)))
-        time = self.time_emb(self.time_act(t))[:, :, None]
-        # print(f'net in forward: {net.shape}')
+        time = self.time_emb(self.time_act(t))
+        print(f'net in forward after f0: {net.shape}')
         # print(f'time in forward: {time[:, :, None].shape}')
-        net += time
+        net += time[:, :, None]
         # dx = self.fc_1(self.actvn(self.bn_1(net)))
         dx = self.fc_1(self.actvn(self.bn_1(net)))
 
@@ -89,7 +89,8 @@ class ResnetBlockConv1d(nn.Module):
         else:
             x_s = x
 
-        print(f'c: {c.shape} time: {time.shape}')
+        time = time.unsqueeze(2).expand(-1, -1, c.shape[2])
+        print(f'c: {c.shape} time: {time.shape} net: {net.shape}')
         out = x_s + dx + self.fc_c(torch.cat([c, time], dim=1))
 
         return out
