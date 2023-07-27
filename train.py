@@ -124,8 +124,8 @@ def main_worker(cfg, args, wandb_run=None):
                 print("Epoch %d Batch [%2d/%2d] Time [%3.2fs] Loss %2.5f"
                       % (epoch, bidx, len(train_loader), duration,
                          logs_info['loss']))
-                visualize = step % int(cfg.viz.viz_freq) == 0 and \
-                            int(cfg.viz.viz_freq) > 0 or step < 5
+                visualize = step < 5 or (step % int(cfg.viz.viz_freq) == 0 and \
+                            int(cfg.viz.viz_freq) > 0)
                 trainer.log_train(
                     logs_info, data,
                     writer=writer, epoch=epoch, step=step, visualize=visualize)
