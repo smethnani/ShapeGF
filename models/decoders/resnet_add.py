@@ -9,8 +9,8 @@ class Swish(nn.Module):
 class TimeEmbedding(nn.Module):
     def __init__(self, t_dim: int):
         super().__init__()
-        self.t_dim = t_dim // 4
-        self.lin1 = nn.Linear(t_dim // 4, self.t_dim)
+        self.t_dim = t_dim
+        self.lin1 = nn.Linear(t_dim, self.t_dim)
         self.act = Swish()
         self.lin2 = nn.Linear(self.t_dim, self.t_dim)
 
@@ -118,7 +118,7 @@ class Decoder(nn.Module):
         self.n_blocks = n_blocks = cfg.n_blocks
 
         # Input = Conditional = zdim (shape) + dim (xyz) + tdim (time)
-        self.time_emb = TimeEmbedding(t_dim * 4)
+        self.time_emb = TimeEmbedding(t_dim)
         c_dim = z_dim + dim
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
