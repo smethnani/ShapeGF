@@ -104,11 +104,11 @@ class Decoder(nn.Module):
 
         time_emb = self.get_timestep_embedding(t, t.device)  # (B, 1, tdim)
         # time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
-        print(f'c: {c.shape}, time_emb: {time_emb.shape}')
+        #print(f'c: {c.shape}, time_emb: {time_emb.shape}')
         ctx_emb = torch.cat([time_emb, c], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
         c_expand = ctx_emb.unsqueeze(2).expand(-1, -1, num_points)
-        print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
+        #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
         c_xyz = torch.cat([p, c_expand], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
