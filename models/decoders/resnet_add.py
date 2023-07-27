@@ -47,6 +47,7 @@ class ResnetBlockConv1d(nn.Module):
         self.size_in = size_in
         self.size_h = size_h
         self.size_out = size_out
+        self.t_dim = t_dim
         # Submodules
         if norm_method == 'batch_norm':
             norm = nn.BatchNorm1d
