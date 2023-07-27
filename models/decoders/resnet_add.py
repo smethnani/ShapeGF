@@ -76,7 +76,7 @@ class ResnetBlockConv1d(nn.Module):
 
     def forward(self, x, c, t):
         net = self.fc_0(self.actvn(self.bn_0(x)))
-        print(f't: {t.shape} tdim: {self.t+dim} size_h: {self.size_h}')
+        print(f't: {t.shape} tdim: {self.t_dim} size_h: {self.size_h}')
         time = self.time_emb(self.time_act(t))
         # print(f'net in forward: {net.shape}')
         # print(f'time in forward: {time[:, :, None].shape}')
