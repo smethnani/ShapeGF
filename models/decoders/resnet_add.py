@@ -24,6 +24,7 @@ class TimeEmbedding(nn.Module):
         # Transform with the MLP
         emb = self.act(self.lin1(emb))
         emb = self.lin2(emb)
+        print(f'time out: {emb.shape} tim: {self.t_dim}')
         return emb
 
 class ResnetBlockConv1d(nn.Module):
