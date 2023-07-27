@@ -24,9 +24,9 @@ def visualize_point_clouds_3d(pcl_lst, title_lst=None):
         ax1 = fig.add_subplot(1, len(pcl_lst), 1 + idx, projection='3d')
         ax1.set_title(title)
         ax1.scatter(pts[:, 0], pts[:, 1], pts[:, 2], s=5)
-        ax1.set_xlim(-1, 1)
-        ax1.set_ylim(-1, 1)
-        ax1.set_zlim(-1, 1)
+        ax1.set_xlim(-2, 2)
+        ax1.set_ylim(-2, 2)
+        ax1.set_zlim(-2, 2)
     fig.canvas.draw()
 
     # grab the pixel buffer and dump it into a numpy array
@@ -68,12 +68,12 @@ def get_grid(x, k=10):
     # TODO: set the range of field
     # x = self.get_prior(
     #        1, num_points, self.cfg.models.scorenet.dim).cuda()
-    # ind_x = np.arange(x[:,:,0].min(),x[:,:,0].max(),3/k)
-    # ind_y = np.arange(x[:,:,1].min(),x[:,:,0].max(),3/k)
+    ind_x = np.arange(x[:,:,0].min() * 1.5, x[:,:,0].max() * 1.5 , 3 / k)
+    ind_y = np.arange(x[:,:,1].min() * 1.5, x[:,:,0].max() * 1.5 , 3 / k)
     # max_x, max_y = 1.5, 1.5
-    max_x, max_y = 2, 2
-    ind_x = np.arange(-max_x, max_x, 3 / k)
-    ind_y = np.arange(-max_y, max_y, 3 / k)
+    # max_x, max_y = 2, 2
+    # ind_x = np.arange(-max_x, max_x, 3 / k)
+    # ind_y = np.arange(-max_y, max_y, 3 / k)
     X, Y = np.meshgrid(ind_x, ind_y)
     X = torch.tensor(X).view(k * k).to(x)
     Y = torch.tensor(Y).view(k * k).to(x)

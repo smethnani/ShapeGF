@@ -214,10 +214,10 @@ class Trainer(BaseTrainer):
                 generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 # ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
-                wandb.log({
-                    "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
-                    "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]
-                    })
+
+                wandb.log({ "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
+                            "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]})
+                            
                 # Overview
                 all_imgs = []
                 for idx in range(num_vis):
@@ -254,7 +254,7 @@ class Trainer(BaseTrainer):
             inp_pts = data['tr_points'].cuda()
             m = data['mean'].cuda()
             std = data['std'].cuda()
-            #print(f'inp_pts: {inp_pts.shape}')
+            print(f'm: {m}, std: {std}')
             rec_pts, _, _ = self.reconstruct(inp_pts, save_img_freq=1000)
 
             # denormalize

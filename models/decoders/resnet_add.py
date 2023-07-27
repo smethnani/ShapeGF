@@ -39,13 +39,8 @@ class ResnetBlockConv1d(nn.Module):
 
         self.fc_0 = nn.Conv1d(size_in, size_h, 1)
         self.fc_1 = nn.Conv1d(size_h, size_out, 1)
-        self.fc_c = nn.Conv1d(c_dim, size_out, 1)
+        self.fc_c = nn.Conv1d(c_dim + t_dim, size_out, 1)
         self.actvn = nn.ReLU()
-
-        # self.mlp = nn.Sequential(
-        #     nn.SiLU(),
-        #     nn.Linear(time_emb_dim, dim_out * 2)
-        # ) if t_dim is not None else None
 
         self.time_emb = nn.Linear(t_dim, size_h)
         self.time_act = Swish()
@@ -60,11 +55,12 @@ class ResnetBlockConv1d(nn.Module):
 
     def forward(self, x, c, t):
         net = self.fc_0(self.actvn(self.bn_0(x)))
-        time = self.time_emb(self.time_act(t))
+        time = self.time_act(self.time_emb(t))
         # print(f'net in forward: {net.shape}')
         # print(f'time in forward: {time[:, :, None].shape}')
         # net += [:, :, None, None]
         net += time[:, :, None]
+        # dx = self.fc_1(self.actvn(self.bn_1(net)))
         dx = self.fc_1(self.actvn(self.bn_1(net)))
 
         if self.shortcut is not None:
@@ -72,7 +68,7 @@ class ResnetBlockConv1d(nn.Module):
         else:
             x_s = x
 
-        out = x_s + dx + self.fc_c(c)
+        out = x_s + dx + self.fc_c(torch.cat([c, time], dim=1))
 
         return out
 
