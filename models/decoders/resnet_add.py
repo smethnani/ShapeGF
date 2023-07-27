@@ -15,7 +15,7 @@ class TimeEmbedding(nn.Module):
         self.lin2 = nn.Linear(self.t_dim, self.t_dim)
 
     def forward(self, t: torch.Tensor):
-        half_dim = self.n_channels // 8
+        half_dim = self.t_dim // 8
         emb = np.log(10_000) / (half_dim - 1)
         emb = torch.exp(torch.arange(half_dim, device=t.device) * -emb)
         emb = t[:, None] * emb[None, :]
