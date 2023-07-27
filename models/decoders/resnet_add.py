@@ -72,7 +72,7 @@ class Decoder(nn.Module):
         xyz_condition: True
     """
 
-        def __init__(self, _, cfg):
+    def __init__(self, _, cfg):
         super().__init__()
         self.cfg = cfg
         self.z_dim = z_dim = cfg.z_dim
