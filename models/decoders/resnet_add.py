@@ -93,7 +93,7 @@ class Decoder(nn.Module):
         self.actvn_out = nn.ReLU()
 
     # This should have the same signature as the sig condition one
-    def forward(self, x, context, t):
+    def forward(self, x, c, t):
         """
         :param x: (bs, npoints, self.dim) Input coordinate (xyz)
         :param c: (bs, self.zdim + 1) Shape latent code + sigma
@@ -104,7 +104,7 @@ class Decoder(nn.Module):
 
         time_emb = self.get_timestep_embedding(t, t.device)  # (B, 1, tdim)
         # time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
-        print(f'context: {context.shape}, time_emb: {time_emb.shape}')
+        print(f'c: {c.shape}, time_emb: {time_emb.shape}')
         # ctx_emb = torch.cat([time_emb, context], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
         c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
