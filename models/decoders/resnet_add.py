@@ -36,7 +36,7 @@ class Decoder(Module):
             ConcatSquashLinear(128, 3, context_dim+3)
         ])
 
-    def forward(self, x, beta, context):
+    def forward(self, x, context, beta):
         """
         Args:
             x:  Point clouds at some timestep t, (B, N, d).
