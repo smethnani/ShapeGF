@@ -47,7 +47,7 @@ class ResnetBlockConv1d(nn.Module):
         #     nn.Linear(time_emb_dim, dim_out * 2)
         # ) if t_dim is not None else None
 
-        self.time_emb = nn.Linear(t_dim, size_out)
+        self.time_emb = nn.Linear(t_dim, size_h)
         self.time_act = Swish()
 
         if size_in == size_out:
@@ -125,7 +125,7 @@ class Decoder(nn.Module):
         # ctx_emb = torch.cat([c, time_emb], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
         c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
-        time_emb = time_emb.unsqueeze(2).expand(-1, -1, num_points)
+        # time_emb = time_emb.unsqueeze(2).expand(-1, -1, num_points)
         #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
         c_xyz = torch.cat([p, c_expand], dim=1)
         net = self.conv_p(c_xyz)
