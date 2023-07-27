@@ -77,10 +77,10 @@ class ResnetBlockConv1d(nn.Module):
 
     def forward(self, x, c, t):
         net = self.fc_0(self.actvn(self.bn_0(x)))
-        time = self.time_emb(self.time_act(t))
+        time = self.time_emb(self.time_act(t))[:, :, None]
         # print(f'net in forward: {net.shape}')
         # print(f'time in forward: {time[:, :, None].shape}')
-        net += time[:, :, None]
+        net += time
         # dx = self.fc_1(self.actvn(self.bn_1(net)))
         dx = self.fc_1(self.actvn(self.bn_1(net)))
 
@@ -137,9 +137,7 @@ class Decoder(nn.Module):
         """
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
-        print(f't before: {t.shape}')
         t = self.time_emb(t)
-        print(f't after: {t.shape}')
         # time_emb = self.get_timestep_embedding(t, t.device)  # (B, 1, tdim)
         # time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
         #print(f'c: {c.shape}, time_emb: {time_emb.shape}')
