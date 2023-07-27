@@ -15,13 +15,11 @@ class TimeEmbedding(nn.Module):
         self.lin2 = nn.Linear(self.t_dim, self.t_dim)
 
     def forward(self, t: torch.Tensor):
-        half_dim = self.t_dim // 2
-        emb = np.log(10000) / (half_dim - 1)
-        emb = torch.from_numpy(np.exp(np.arange(0, half_dim) * -emb)).float().to(t.device)
+        half_dim = self.n_channels // 8
+        emb = np.log(10_000) / (half_dim - 1)
+        emb = torch.exp(torch.arange(half_dim, device=t.device) * -emb)
         emb = t[:, None] * emb[None, :]
-        emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
-        if self.t_dim % 2 == 1:  # zero pad
-            emb = nn.functional.pad(emb, (0, 1), "constant", 0)
+        emb = torch.cat((emb.sin(), emb.cos()), dim=1)
 
         # Transform with the MLP
         emb = self.act(self.lin1(emb))
