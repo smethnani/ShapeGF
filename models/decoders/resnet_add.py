@@ -61,10 +61,10 @@ class ResnetBlockConv1d(nn.Module):
     def forward(self, x, c, t):
         net = self.fc_0(self.actvn(self.bn_0(x)))
         time = self.time_emb(self.time_act(t))
-        print(f'net in forward: {net.shape}')
-        print(f'time in forward: {time[:, :, None, None].shape}')
+        # print(f'net in forward: {net.shape}')
+        # print(f'time in forward: {time[:, :, None].shape}')
         # net += [:, :, None, None]
-        net += time
+        net += time[:, :, None]
         dx = self.fc_1(self.actvn(self.bn_1(net)))
 
         if self.shortcut is not None:
