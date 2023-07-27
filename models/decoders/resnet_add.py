@@ -135,7 +135,7 @@ class Decoder(nn.Module):
         """
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
-        t = self.time_emb(t)
+        # t = self.time_emb(t)
         # time_emb = self.get_timestep_embedding(t, t.device)  # (B, 1, tdim)
         # time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
         #print(f'c: {c.shape}, time_emb: {time_emb.shape}')
