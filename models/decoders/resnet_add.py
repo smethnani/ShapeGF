@@ -108,6 +108,7 @@ class Decoder(nn.Module):
         ctx_emb = torch.cat([time_emb, context], dim=-1) 
 
         # c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
+        print(f'p: {p.shape}, ctx: {ctx_emb.shape}')
         c_xyz = torch.cat([p, ctx_emb], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
