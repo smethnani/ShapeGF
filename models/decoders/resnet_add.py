@@ -105,7 +105,8 @@ class Decoder(nn.Module):
         context = context.view(batch_size, 1, -1)   # (B, 1, F)
 
         time_emb = torch.cat([t, torch.sin(t), torch.cos(t)], dim=-1)  # (B, 1, 3)
-        ctx_emb = torch.cat([time_emb, context], dim=-1) 
+        print(f'context: {context.shape}, time_emb: {time_emb.shape}')
+        ctx_emb = torch.cat([time_emb, context], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
         # c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
         print(f'p: {p.shape}, ctx: {ctx_emb.shape}')
