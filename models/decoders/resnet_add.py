@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
-class Swish(Module):
+
+class Swish(nn.Module):
     def forward(self, x):
         return x * torch.sigmoid(x)
 
