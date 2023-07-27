@@ -40,18 +40,18 @@ except Exception as e:  # noqa
 #         "x": perturbed_points
 #     }
 
-def sample_pairs(x1, x0=None):
-    t = torch.rand((x1.shape[0], 1, 1)).to(x1.device)
-    xt = t * x1 + (1.-t) * x0
-    target = x1 - x0
-    return xt, t * 999, target
+# def sample_pairs(x1, x0=None):
+#     t = torch.rand((x1.shape[0], 1, 1)).to(x1.device)
+#     xt = t * x1 + (1.-t) * x0
+#     target = x1 - x0
+#     return xt, t * 999, target
 
 def get_train_tuple(z0=None, z1=None):
     t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
     z_t =  t * z1 + (1.-t) * z0
     target = z1 - z0 
         
-    return z_t, t * 999, target
+    return z_t, t, target
 
 def flow_matching_loss(vnet, z, data, noise=None):
     B, D, N = data.shape
