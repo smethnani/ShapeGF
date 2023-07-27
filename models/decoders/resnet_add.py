@@ -124,10 +124,10 @@ class Decoder(nn.Module):
         # ctx_emb = torch.cat([c, time_emb], dim=-1) # p: torch.Size([32, 3, 2048]), ctx: torch.Size([32, 1, 131])
 
         c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
-        print(f'p: {p.shape}, c_expand: {c_expand.shape}, temb: {time_emb.shape}')
         t_expand = time_emb.unsqueeze(2).expand(-1, -1, num_points)
-        print(f'texpand: {t_expand.shape}')
-        c_xyz = torch.cat([p, c_expand, time_emb], dim=1)
+        # print(f'p: {p.shape}, c_expand: {c_expand.shape}, temb: {time_emb.shape}')
+        # print(f'texpand: {t_expand.shape}')
+        c_xyz = torch.cat([p, c_expand, t_expand], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
             net = block(net, c_xyz)
