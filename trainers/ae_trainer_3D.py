@@ -51,7 +51,7 @@ def get_train_tuple(z0=None, z1=None):
     z_t =  t * z1 + (1.-t) * z0
     target = z1 - z0 
         
-    return z_t, t, target
+    return z_t, t*999, target
 
 def flow_matching_loss(vnet, z, data, noise=None):
     B, D, N = data.shape
