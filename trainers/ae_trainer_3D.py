@@ -50,7 +50,7 @@ def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
     t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
     z_t =  t * z1 + (1.-t) * z0
     target = z1 - z0 
-    t = (t * 999).type(torch.int64)
+    # t = (t * 999).type(torch.int64)
     return z_t, t, target
 
 def flow_matching_loss(vnet, z, data, noise=None):
@@ -160,7 +160,8 @@ class Trainer(BaseTrainer):
         #     np.array(self.sigmas))[labels].float().view(batch_size, 1).cuda()
         # z = torch.cat((z, used_sigmas), dim=1)
 
-        noise = torch.randn(len(tr_pts), tr_pts.shape[1], tr_pts.shape[2])
+        noise = torch.randn(batch_size, tr_pts.shape[1], tr_pts.shape[2])
+        noise = noise.to(tr_pts.device)
         res = flow_matching_loss(self.vnet, z, tr_pts, noise)
         loss = res['loss']
         if not no_update:
@@ -214,17 +215,8 @@ class Trainer(BaseTrainer):
                 generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 # ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
-
-                def normalize_pc(points):
-                    centroid = np.mean(points, axis=0)
-                    points -= centroid
-                    furthest_distance = np.max(np.sqrt(np.sum(abs(points)**2,axis=-1)))
-                    points /= furthest_distance
-
-                    return points
                 
                 wandb.log({ "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
-                            "Rec-norm": [wandb.Object3D(normalize_pc(pc)[:, [0, 2, 1]]) for pc in generated],
                             "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]})
 
                 # Overview
@@ -385,7 +377,7 @@ class Trainer(BaseTrainer):
             for t in range(n_timesteps):
                 t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
                 img_t = img_t + self.vnet(img_t, z, t_) * 1. / n_timesteps
-                if t % save_img_freq == 0:
+                if (t + 1) % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
         return img_t, imgs, timestamps

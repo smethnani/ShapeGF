@@ -20,29 +20,29 @@ viz:
 
 trainer:
   type: trainers.ae_trainer_3D
-  epochs: 500
+  epochs: 2000
   seed: 100
   sigma_begin: 1
   sigma_end: 0.01
   sigma_num: 10
   opt_dec:
     type: 'adam'
-    lr: 1e-4  #  use bs*1e-5/8
+    lr: 1e-3  #  use bs*1e-5/8
     beta1: 0.9
     beta2: 0.999
     momentum: 0.9  # for SGD
     weight_decay: 0.
     scheduler: linear
-    step_epoch: 2000
+    step_epoch: 100
   opt_enc:
     type: 'adam'
-    lr: 1e-4
+    lr: 1e-3
     beta1: 0.9
     beta2: 0.999
     momentum: 0.9  # for SGD
     weight_decay: 0.
     scheduler: linear
-    step_epoch: 2000
+    step_epoch: 300
 
 models:
   scorenet:  # [dim] - [hid_dims] - [dim]
