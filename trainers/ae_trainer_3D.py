@@ -224,7 +224,7 @@ class Trainer(BaseTrainer):
                     return points
                 
                 wandb.log({ "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
-                            "Rec-norm": [wandb.Object3D(normalize(pc)[:, [0, 2, 1]]) for pc in generated],
+                            "Rec-norm": [wandb.Object3D(normalize_pc(pc)[:, [0, 2, 1]]) for pc in generated],
                             "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]})
 
                 # Overview
