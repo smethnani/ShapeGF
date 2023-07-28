@@ -216,9 +216,9 @@ class Trainer(BaseTrainer):
                 # ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
 
                 def normalize_pc(points):
-                    centroid = torch.mean(points, axis=0)
+                    centroid = np.mean(points, axis=0)
                     points -= centroid
-                    furthest_distance = torch.max(np.sqrt(np.sum(abs(points)**2,axis=-1)))
+                    furthest_distance = np.max(np.sqrt(np.sum(abs(points)**2,axis=-1)))
                     points /= furthest_distance
 
                     return points
