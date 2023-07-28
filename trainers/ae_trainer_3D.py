@@ -62,7 +62,7 @@ def flow_matching_loss(vnet, z, data, noise=None):
     xt, t, target = get_train_tuple(z0=noise, z1=data)
     t = t.squeeze()
     eps_recon = vnet(xt, z, t)
-    loss = ((target - eps_recon)**2).mean(dim=list(range(1, len(data.shape))))
+    loss = ((target - eps_recon)**2).sum(dim=2).mean()
     return {
         "loss": loss.mean(),
         "x": xt
