@@ -46,12 +46,12 @@ except Exception as e:  # noqa
 #     target = x1 - x0
 #     return xt, t * 999, target
 
-def get_train_tuple(z0=None, z1=None):
-    t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
+def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
+    t = torch.randint(0, n_timesteps, (z1.shape[0], 1, 1)).to(z1.device)
     z_t =  t * z1 + (1.-t) * z0
     target = z1 - z0 
         
-    return z_t, t*999, target
+    return z_t, t, target
 
 def flow_matching_loss(vnet, z, data, noise=None):
     B, D, N = data.shape
@@ -215,9 +215,18 @@ class Trainer(BaseTrainer):
                 ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 # ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
 
+                def normalize_pc(points):
+                    centroid = torch.mean(points, axis=0)
+                    points -= centroid
+                    furthest_distance = torch.max(np.sqrt(np.sum(abs(points)**2,axis=-1)))
+                    points /= furthest_distance
+
+                    return points
+                
                 wandb.log({ "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
+                            "Rec-norm": [wandb.Object3D(normalize(pc)[:, [0, 2, 1]]) for pc in generated],
                             "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]})
-                            
+
                 # Overview
                 all_imgs = []
                 for idx in range(num_vis):
