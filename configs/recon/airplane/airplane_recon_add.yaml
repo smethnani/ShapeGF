@@ -33,7 +33,7 @@ trainer:
     momentum: 0.9  # for SGD
     weight_decay: 0.
     scheduler: linear
-    step_epoch: 100
+    step_epoch: 2000
   opt_enc:
     type: 'adam'
     lr: 1e-3
@@ -42,7 +42,7 @@ trainer:
     momentum: 0.9  # for SGD
     weight_decay: 0.
     scheduler: linear
-    step_epoch: 300
+    step_epoch: 2000
 
 models:
   scorenet:  # [dim] - [hid_dims] - [dim]
