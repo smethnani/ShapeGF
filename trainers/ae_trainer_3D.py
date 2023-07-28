@@ -62,9 +62,14 @@ def flow_matching_loss(vnet, z, data, noise=None):
     xt, t, target = get_train_tuple(z0=noise, z1=data)
     t = t.squeeze()
     eps_recon = vnet(xt, z, t)
-    loss = ((target - eps_recon)**2).sum(dim=2).mean()
+    sqerr = (target - eps_recon)**2
+    print(f'sqerr sum dim 1 {sqerr.sum(dim=1).mean()}')
+    print(f'sqerr sum dim 2 (*) {sqerr.sum(dim=2).mean()}')
+    print(f'sqerr sum dim 1 2 3 then mean {sqerr.sum(dim=list(range(1, len(data.shape)))).mean()}')
+    print(f'mean of sqerr sum dim 1 2 3 then mean {sqerr.sum(dim=list(range(1, len(data.shape)))).mean().mean()}')
+    loss = sqerr.sum(dim=2).mean()
     return {
-        "loss": loss.mean(),
+        "loss": loss,
         "x": xt
     }
 
@@ -208,13 +213,9 @@ class Trainer(BaseTrainer):
                 # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                 #     inp[:num_vis].cuda(), self.cfg)
 
-                print(f'Gtr: min: {gtr[:num_vis].min()} max: {gtr[:num_vis].max()}, mean: {gtr[:num_vis].mean()}')
-                print(f'Rec: min: {rec.min()} max: {rec.max()}, mean: {rec.mean()}')
-
                 print("Saving Reconstructed point clouds")
                 generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 ground_truth = [gtr[idx].cpu().detach().numpy() for idx in range(num_vis)]
-                # ground_truth = [rec_gt[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 
                 wandb.log({ "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
                             "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]})
