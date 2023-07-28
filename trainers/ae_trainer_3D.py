@@ -47,10 +47,10 @@ except Exception as e:  # noqa
 #     return xt, t * 999, target
 
 def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
-    t = torch.randint(0, n_timesteps, (z1.shape[0], 1, 1)).to(z1.device)
+    t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
     z_t =  t * z1 + (1.-t) * z0
     target = z1 - z0 
-        
+    t = (t * 999).type(torch.int64)
     return z_t, t, target
 
 def flow_matching_loss(vnet, z, data, noise=None):
