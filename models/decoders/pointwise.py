@@ -21,8 +21,8 @@ class Decoder(Module):
 
     def __init__(self, _, cfg):
         super().__init__()
-        point_dim = cfg.input_dim
-        context_dim = cfg.zdim
+        point_dim = 3
+        context_dim = cfg.z_dim
         residual = True
         self.act = F.leaky_relu
         self.residual = residual
