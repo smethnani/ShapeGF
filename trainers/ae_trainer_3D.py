@@ -63,7 +63,6 @@ def flow_matching_loss(vnet, z, data, noise=None):
     t = t.squeeze()
     eps_recon = vnet(xt, z, t)
     sqerr = (target - eps_recon)**2
-    print(f'sqrerr shape: {sqerr.shape}')
     loss = sqerr.sum(dim=2).mean()
     # loss = sqerr.mean(dim=[1, 2]).mean()
     return {
