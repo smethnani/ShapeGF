@@ -6,7 +6,7 @@ data:
   tr_max_sample_points: 2048
   te_max_sample_points: 2048
   data_dir: data/ShapeNetCore.v2.PC15k
-  batch_size: 32
+  batch_size: 128
   dataset_scale: 1
   normalize_per_shape: False
   normalize_std_per_axis: False
@@ -27,12 +27,13 @@ trainer:
   sigma_num: 10
   opt_dec:
     type: 'adam'
-    lr: 1e-2  #  use bs*1e-5/8
+    lr: 1e-3  #  use bs*1e-5/8
     beta1: 0.9
     beta2: 0.999
     momentum: 0.9  # for SGD
     weight_decay: 0.
     scheduler: linear
+    final_ratio: 0.1
     step_epoch: 2000
   opt_enc:
     type: 'adam'
@@ -41,6 +42,7 @@ trainer:
     beta2: 0.999
     momentum: 0.9  # for SGD
     weight_decay: 0.
+    final_ratio: 0.1
     scheduler: linear
     step_epoch: 2000
 
