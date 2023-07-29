@@ -20,7 +20,7 @@ viz:
 
 trainer:
   type: trainers.ae_trainer_3D
-  epochs: 2000
+  epochs: 5000
   seed: 100
   sigma_begin: 1
   sigma_end: 0.01
@@ -60,6 +60,7 @@ models:
     type: models.encoders.l3dp_encoder
     use_deterministic_encoder: True
     zdim: 128
+    tdim: 128
     input_dim: 3
 
 inference:
