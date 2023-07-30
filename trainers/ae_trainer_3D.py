@@ -365,7 +365,6 @@ class Trainer(BaseTrainer):
         return torch.randn(num_chain, *x.shape[1:], device=x.device)
 
     def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
-        print(f'z shape: {z.shape}')
         img_t = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
         img_t = img_t.to(z)
         imgs = []
