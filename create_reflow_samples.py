@@ -41,9 +41,8 @@ def get_args():
 
     # Resume:
     parser.add_argument('--resume', default=False, action='store_true')
-    parser.add_argument('--pretrained', default=False, action='store_true')
-    parser.add_argument('--reflow_sample_dir', default=None, type=str,
-                        help="Reflow sample directory")
+    parser.add_argument('--pretrained', default=None, type=str,
+                        help="Pretrained cehckpoint")
 
     # Test run:
     parser.add_argument('--test_run', default=False, action='store_true')
@@ -120,7 +119,7 @@ def main_worker(cfg, args, wandb_run=None):
                 samples = [x1[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 data_viz = data[:num_vis]
                 true_samples = [data_viz[idx].cpu().detach.numpy() for idx in range(num_vis)]
-                
+
                 wandb.log({ "Sample": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in samples],
                             "True": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in true_samples],
                             "Noise": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in noise]})
