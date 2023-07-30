@@ -27,7 +27,7 @@ def get_opt(params, cfgopt):
             scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=decay)
         elif scheduler_type == 'linear':
             step_size = int(getattr(cfgopt, "step_epoch", 2000))
-            final_ratio = float(getattr(cfgopt, "final_ratio", 0.05))
+            final_ratio = float(getattr(cfgopt, "final_ratio", 0.075))
             start_ratio = float(getattr(cfgopt, "start_ratio", 0.5))
             duration_ratio = float(getattr(cfgopt, "duration_ratio", 0.45))
 
