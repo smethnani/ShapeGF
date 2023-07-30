@@ -305,7 +305,7 @@ class Trainer(BaseTrainer):
             inp_pts = data['tr_points'].cuda()
             # rec_pts, _, _ = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
 
-            rec, rec_list, timestamps = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
+            rec, rec_list, timestamps = self.reconstruct(inp=inp_pts[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
             # print("Ground truth recon:")
             # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
             #     inp[:num_vis].cuda(), self.cfg)
