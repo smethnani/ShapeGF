@@ -382,6 +382,3 @@ class Trainer(BaseTrainer):
             self.encoder.eval()
             z, _ = self.encoder(inp)
             return self.generate_sample(z, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
-
-    def reconstruct_ground_truth(self, inp, num_points=2048, n_timesteps=1000):
-
