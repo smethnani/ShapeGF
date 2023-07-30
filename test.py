@@ -86,7 +86,7 @@ def main_worker(cfg, args):
             return nn.DataParallel(m)
         trainer.multi_gpu_wrapper(wrapper)
     # trainer.resume(args.pretrained)
-    artifact = run.use_artifact('smeth/shapes-exp/epoch_1999_iters_176000.pt:v1', type='model')
+    artifact = wandb.use_artifact('smeth/shapes-exp/epoch_1999_iters_176000.pt:v1', type='model')
     artifact_dir = artifact.download(root=args.pretrained)
     trainer.resume(artifact_dir)
     print(cfg.save_dir)
