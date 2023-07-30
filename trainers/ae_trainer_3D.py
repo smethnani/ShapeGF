@@ -10,7 +10,6 @@ from trainers.utils.vis_utils import visualize_point_clouds_3d, \
 from trainers.utils.utils import get_opt, get_prior, \
     ground_truth_reconstruct_multi, set_random_seed
 
-
 try:
     from evaluation.evaluation_metrics import EMD_CD
     eval_reconstruciton = True
@@ -18,27 +17,6 @@ except Exception as e:  # noqa
     # Skip evaluation
     print(f'Error: {e}')
     eval_reconstruciton = False
-
-
-# def score_matching_loss(score_net, shape_latent, tr_pts, sigma):
-#     bs, num_pts = tr_pts.size(0), tr_pts.size(1)
-#     sigma = sigma.view(bs, 1, 1)
-#     perturbed_points = tr_pts + torch.randn_like(tr_pts) * sigma
-
-#     # For numerical stability, the network predicts the field in a normalized
-#     # scale (i.e. the norm of the gradient is not scaled by `sigma`)
-#     # As a result, when computing the ground truth for supervision, we are using
-#     # its original scale without scaling by `sigma`
-#     y_pred = score_net(perturbed_points, shape_latent)  # field (B, #points, 3)
-#     y_gtr = - (perturbed_points - tr_pts).view(bs, num_pts, -1)
-
-#     # The loss for each sigma is weighted
-#     lambda_sigma = 1. / sigma
-#     loss = 0.5 * ((y_gtr - y_pred) ** 2. * lambda_sigma).sum(dim=2).mean()
-#     return {
-#         "loss": loss,
-#         "x": perturbed_points
-#     }
 
 def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
     t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
@@ -51,20 +29,17 @@ def flow_matching_loss(vnet, z, data, noise=None):
     if noise is None:
         noise = torch.randn_like(data)
     noise = noise.to(data.device)
-    # xt, t, target = sample_pairs(x1=data, x0=noise)
     xt, t, target = get_train_tuple(z0=noise, z1=data)
     t = t.squeeze()
     model_output = vnet(xt, z, t)
     sqerr = (target - model_output)**2
     loss = sqerr.sum(dim=2).mean()
-    # loss = sqerr.mean(dim=[1, 2]).mean()
     return {
         "loss": loss,
         "x": xt
     }
 
 class Trainer(BaseTrainer):
-
     def __init__(self, cfg, args):
         super().__init__(cfg, args)
         self.cfg = cfg
@@ -347,38 +322,8 @@ class Trainer(BaseTrainer):
         start_epoch = ckpt['epoch']
         return start_epoch
 
-    # def langevin_dynamics(self, z, num_points=2048):
-    #     with torch.no_grad():
-    #         assert hasattr(self.cfg, "inference")
-    #         step_size_ratio = float(getattr(
-    #             self.cfg.inference, "step_size_ratio", 1))
-    #         num_steps = int(getattr(self.cfg.inference, "num_steps", 5))
-    #         num_points = int(getattr(
-    #             self.cfg.inference, "num_points", num_points))
-    #         weight = float(getattr(self.cfg.inference, "weight", 1))
-    #         sigmas = self.sigmas
-
-    #         x_list = []
-    #         self.score_net.eval()
-    #         x = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
-    #         x = x.to(z)
-    #         x_list.append(x.clone())
-    #         for sigma in sigmas:
-    #             sigma = torch.ones((1,)).cuda() * sigma
-    #             z_sigma = torch.cat((z, sigma.expand(z.size(0), 1)), dim=1)
-    #             step_size = 2 * sigma ** 2 * step_size_ratio
-    #             for t in range(num_steps):
-    #                 z_t = torch.randn_like(x) * weight
-    #                 x += torch.sqrt(step_size) * z_t
-    #                 grad = self.score_net(x, z_sigma)
-    #                 grad = grad / sigma ** 2
-    #                 x += 0.5 * step_size * grad
-    #             x_list.append(x.clone())
-    #     return x, x_list
-    
-    def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
-        # img_t = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
-        img_t = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
+    def generate_sample(self, z, noise=None, num_points=2048, n_timesteps=1000, save_img_freq=None):
+        img_t = noise.clone()
         img_t = img_t.to(z.device)
         imgs = []
         timestamps = []
@@ -388,7 +333,7 @@ class Trainer(BaseTrainer):
             for t in range(n_timesteps):
                 t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
                 img_t = img_t + self.vnet(img_t, z, t_) * dt
-                if (t + 1) % save_img_freq == 0:
+                if (save_img_freq is not None and t + 1) % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
         return img_t, imgs, timestamps
@@ -396,7 +341,20 @@ class Trainer(BaseTrainer):
     def sample(self, num_shapes=1, num_points=2048):
         with torch.no_grad():
             # z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
-            return self.generate_sample(z, num_points=num_points)
+            noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
+            return self.generate_sample(z, noise=noise, num_points=num_points)
+    
+    def gen_reflow_pairs(self, data, *args, **kwargs):
+        tr_pts = data['tr_points'].cuda()  # (B, #points, 3)smn_ae_trainer.py
+        batch_size = tr_pts.size(0)
+        num_points = self.cfg.models.inference.num_points
+        dim = self.cfg.models.scorenet.dim
+        with torch.no_grad():
+            self.encoder.eval()
+            z, _ = self.encoder(tr_pts)
+            x0 = torch.randn((z.size(0), num_points, dim), dtype=torch.float, device=z.device)
+            x1, _, _ = self.generate_sample(z, noise=x0, num_points=num_points, n_timesteps=1000)
+            return [x0, x1]
 
     def reconstruct(self, inp, num_points=2048, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():
