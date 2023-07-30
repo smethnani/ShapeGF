@@ -87,7 +87,7 @@ def main_worker(cfg, args):
         trainer.multi_gpu_wrapper(wrapper)
     trainer.resume(args.pretrained)
     print(cfg.save_dir)
-    val_info = trainer.validate(test_loader, epoch=-1)
+    val_info = trainer.test_recon(test_loader, epoch=-1)
     wandb.log(val_info)
 
     print("Test done:")
