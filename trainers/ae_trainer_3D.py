@@ -361,19 +361,18 @@ class Trainer(BaseTrainer):
     #                 x += 0.5 * step_size * grad
     #             x_list.append(x.clone())
     #     return x, x_list
-    def new_x_chain(self, x, num_chain):
-        return torch.randn(num_chain, *x.shape[1:], device=x.device)
-
+    
     def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
         img_t = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
-        img_t = img_t.to(z)
+        img_t = img_t.to(z.device)
         imgs = []
         timestamps = []
+        dt = 1. / n_timesteps
         with torch.no_grad():
             self.vnet.eval()
             for t in range(n_timesteps):
                 t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
-                img_t = img_t + self.vnet(img_t, z, t_) * 1. / n_timesteps
+                img_t = img_t + self.vnet(img_t, z, t_) * dt
                 if (t + 1) % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
@@ -389,4 +388,6 @@ class Trainer(BaseTrainer):
             self.encoder.eval()
             z, _ = self.encoder(inp)
             return self.generate_sample(z, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
+
+    def reconstruct_ground_truth(self, inp, num_points=2048, n_timesteps=1000):
 
