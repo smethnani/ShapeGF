@@ -298,6 +298,27 @@ class Trainer(BaseTrainer):
 
         return all_res
 
+    def test_recon(self, test_loader, epoch, *args, **kwargs):
+        num_vis = 5
+        for data in tqdm.tqdm(test_loader):
+            ref_pts = data['te_points'].cuda()
+            inp_pts = data['tr_points'].cuda()
+            # rec_pts, _, _ = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
+
+            rec, rec_list, timestamps = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
+            # print("Ground truth recon:")
+            # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
+            #     inp[:num_vis].cuda(), self.cfg)
+
+            print("Saving Reconstructed point clouds")
+            generated = [rec[idx].cpu().detach().numpy() for idx in range(num_vis)]
+            ground_truth = [ref_pts[idx].cpu().detach().numpy() for idx in range(num_vis)]
+            
+            wandb.log({ "Reconstructed": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
+                        "True Shape": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]})
+
+
+   
     def save(self, epoch=None, step=None, appendix=None, wandb_run=None, **kwargs):
         d = {
             'opt_enc': self.opt_enc.state_dict(),
