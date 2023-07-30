@@ -56,12 +56,12 @@ def get_args():
         #  Create log_name
     cfg_file_name = os.path.splitext(os.path.basename(args.config))[0]
     logdir = args.log
+    run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
     if logdir:
-        config.log_name = f"logs/{logdir}"
-        config.save_dir = f"logs/{logdir}"
-        config.log_dir = f"logs/{logdir}"
+        config.log_name = f"{logdir}/test-{run_time}"
+        config.save_dir = f"{logdir}/test-{run_time}"
+        config.log_dir = f"{logdir}/test-{run_time}"
     else:
-        run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
         # Currently save dir and log_dir are the same
         config.log_name = "logs/%s_%s" % (cfg_file_name, run_time)
         config.save_dir = "logs/%s_%s" % (cfg_file_name, run_time)
