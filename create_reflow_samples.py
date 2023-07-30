@@ -101,7 +101,7 @@ def main_worker(cfg, args, wandb_run=None):
     # main sampling loop
     print("Start epoch: %d End epoch: %d" % (start_epoch, cfg.trainer.epochs))
     step = 0
-    for epoch in range(start_epoch, cfg.trainer.epochs):
+    for epoch in range(1):
         # train for one epoch
         for bidx, data in enumerate(train_loader):
             step = bidx + len(train_loader) * epoch + 1
@@ -111,7 +111,7 @@ def main_worker(cfg, args, wandb_run=None):
             print("Epoch %d Batch [%2d/%2d] Time [%3.2fs]"
                     % (epoch, bidx, len(train_loader), duration))
             torch.save(sample_pair[0], f"{cfg.log_dir}/noise-{bidx}.pt")
-            torch.save(sample_pair[1], f"{args.log_dir}/sample-{bidx}.pt")
+            torch.save(sample_pair[1], f"{cfg.log_dir}/sample-{bidx}.pt")
             if step % int(cfg.viz.viz_freq) == 0 or epoch < 5:
                 num_vis = 5
                 x0, x1 = sample_pair
