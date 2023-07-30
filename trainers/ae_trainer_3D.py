@@ -40,17 +40,10 @@ except Exception as e:  # noqa
 #         "x": perturbed_points
 #     }
 
-# def sample_pairs(x1, x0=None):
-#     t = torch.rand((x1.shape[0], 1, 1)).to(x1.device)
-#     xt = t * x1 + (1.-t) * x0
-#     target = x1 - x0
-#     return xt, t * 999, target
-
 def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
     t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
     z_t =  t * z1 + (1.-t) * z0
     target = z1 - z0 
-    # t = (t * 999).type(torch.int64)
     return z_t, t * 999, target
 
 def flow_matching_loss(vnet, z, data, noise=None):
@@ -61,8 +54,8 @@ def flow_matching_loss(vnet, z, data, noise=None):
     # xt, t, target = sample_pairs(x1=data, x0=noise)
     xt, t, target = get_train_tuple(z0=noise, z1=data)
     t = t.squeeze()
-    eps_recon = vnet(xt, z, t)
-    sqerr = (target - eps_recon)**2
+    model_output = vnet(xt, z, t)
+    sqerr = (target - model_output)**2
     loss = sqerr.sum(dim=2).mean()
     # loss = sqerr.mean(dim=[1, 2]).mean()
     return {
@@ -173,7 +166,7 @@ class Trainer(BaseTrainer):
 
         return {
             'loss': loss.detach().cpu().item(),
-            'x': res['x'].detach().cpu()            # perturbed data
+            'x': res['x'].detach().cpu()
         }
 
     def log_train(self, train_info, train_data, writer=None,
@@ -363,7 +356,8 @@ class Trainer(BaseTrainer):
     #     return x, x_list
     
     def generate_sample(self, z, num_points, n_timesteps, save_img_freq=250):
-        img_t = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
+        # img_t = get_prior(z.size(0), num_points, self.cfg.models.scorenet.dim)
+        img_t = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
         img_t = img_t.to(z.device)
         imgs = []
         timestamps = []
