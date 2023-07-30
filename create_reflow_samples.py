@@ -118,8 +118,11 @@ def main_worker(cfg, args, wandb_run=None):
                 x0, x1 = sample_pair
                 noise = [x0[idx].cpu().detach().numpy() for idx in range(num_vis)]
                 samples = [x1[idx].cpu().detach().numpy() for idx in range(num_vis)]
+                data_viz = data[:num_vis]
+                true_samples = [data_viz[idx].cpu().detach.numpy() for idx in range(num_vis)]
                 
                 wandb.log({ "Sample": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in samples],
+                            "True": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in true_samples],
                             "Noise": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in noise]})
             start_time = time.time()
 
