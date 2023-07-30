@@ -333,7 +333,7 @@ class Trainer(BaseTrainer):
             for t in range(n_timesteps):
                 t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
                 img_t = img_t + self.vnet(img_t, z, t_) * dt
-                if (save_img_freq is not None and t + 1) % save_img_freq == 0:
+                if save_img_freq is not None and (t + 1) % save_img_freq == 0:
                     imgs.append(img_t.clone())
                     timestamps.append(t)
         return img_t, imgs, timestamps
