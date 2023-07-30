@@ -347,7 +347,7 @@ class Trainer(BaseTrainer):
     def gen_reflow_pairs(self, data, *args, **kwargs):
         tr_pts = data['tr_points'].cuda()  # (B, #points, 3)smn_ae_trainer.py
         batch_size = tr_pts.size(0)
-        num_points = self.cfg.models.inference.num_points
+        num_points = self.cfg.inference.num_points
         dim = self.cfg.models.scorenet.dim
         with torch.no_grad():
             self.encoder.eval()
