@@ -275,11 +275,11 @@ class Trainer(BaseTrainer):
                     inp_pts = data['tr_points'].cuda()
                     if not done_interp:
                         bs = inp_pts.shape[0]
-                        self.gen.eval(bs=bs)
+                        self.gen.eval()
                         prior = torch.linspace(-2, 2, bs).unsqueeze(1).repeat(1, 3)
                         prior = prior.cuda()
                         print(f'prior shape: {prior.shape}')
-                        z = self.gen()
+                        z = self.gen(bs=bs)
                         print(f'z shape: {z.shape}')
 
                         z = self.gen(z=prior)
