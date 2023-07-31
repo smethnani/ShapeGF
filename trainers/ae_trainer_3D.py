@@ -323,6 +323,8 @@ class Trainer(BaseTrainer):
         return start_epoch
 
     def generate_sample(self, z, noise=None, num_points=2048, n_timesteps=1000, save_img_freq=None):
+        if noise is None:
+            noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
         img_t = noise.clone()
         img_t = img_t.to(z.device)
         imgs = []
@@ -360,4 +362,5 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            return self.generate_sample(z, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
+            noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
+            return self.generate_sample(z, noise=noise, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
