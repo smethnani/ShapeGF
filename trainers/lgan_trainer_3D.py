@@ -265,6 +265,7 @@ class Trainer(BaseTrainer):
     def validate(self, test_loader, epoch, *args, **kwargs):
         all_res = {}
         done_interp = False
+        eval_generation = True
         if eval_generation:
             with torch.no_grad():
                 all_ref, all_smp = [], []
@@ -292,50 +293,50 @@ class Trainer(BaseTrainer):
                         done_interp = True
 
 
-                    smp_pts, _, _ = self.sample(
-                        num_shapes=inp_pts.size(0),
-                        num_points=inp_pts.size(1),
-                    )
-                    all_smp.append(smp_pts.view(
-                        ref_pts.size(0), ref_pts.size(1), ref_pts.size(2)))
-                    all_ref.append(
-                        ref_pts.view(ref_pts.size(0), ref_pts.size(1),
-                                     ref_pts.size(2)))
+        #             smp_pts, _, _ = self.sample(
+        #                 num_shapes=inp_pts.size(0),
+        #                 num_points=inp_pts.size(1),
+        #             )
+        #             all_smp.append(smp_pts.view(
+        #                 ref_pts.size(0), ref_pts.size(1), ref_pts.size(2)))
+        #             all_ref.append(
+        #                 ref_pts.view(ref_pts.size(0), ref_pts.size(1),
+        #                              ref_pts.size(2)))
 
-                smp = torch.cat(all_smp, dim=0)
-                np.save(
-                    os.path.join(self.cfg.save_dir, 'val',
-                                 'smp_ep%d.npy' % epoch),
-                    smp.detach().cpu().numpy()
-                )
-                ref = torch.cat(all_ref, dim=0)
+        #         smp = torch.cat(all_smp, dim=0)
+        #         np.save(
+        #             os.path.join(self.cfg.save_dir, 'val',
+        #                          'smp_ep%d.npy' % epoch),
+        #             smp.detach().cpu().numpy()
+        #         )
+        #         ref = torch.cat(all_ref, dim=0)
 
-                # Sample CD/EMD
-                # step 1: subsample shapes
-                max_gen_vali_shape = int(getattr(
-                    self.cfg.trainer, "max_gen_validate_shapes",
-                    int(smp.size(0))))
-                sub_sampled = random.sample(
-                    range(smp.size(0)), min(smp.size(0), max_gen_vali_shape))
-                smp_sub = smp[sub_sampled, ...].contiguous()
-                ref_sub = ref[sub_sampled, ...].contiguous()
+        #         # Sample CD/EMD
+        #         # step 1: subsample shapes
+        #         max_gen_vali_shape = int(getattr(
+        #             self.cfg.trainer, "max_gen_validate_shapes",
+        #             int(smp.size(0))))
+        #         sub_sampled = random.sample(
+        #             range(smp.size(0)), min(smp.size(0), max_gen_vali_shape))
+        #         smp_sub = smp[sub_sampled, ...].contiguous()
+        #         ref_sub = ref[sub_sampled, ...].contiguous()
 
-                gen_res = compute_all_metrics(
-                    smp_sub, ref_sub,
-                    batch_size=int(getattr(
-                        self.cfg.trainer, "val_metrics_batch_size", 100)),
-                    accelerated_cd=True
-                )
-                all_res = {
-                    ("val/gen/%s" % k):
-                        (v if isinstance(v, float) else v.item())
-                    for k, v in gen_res.items()}
-                print("Validation Sample (unit) Epoch:%d " % epoch, gen_res)
+        #         gen_res = compute_all_metrics(
+        #             smp_sub, ref_sub,
+        #             batch_size=int(getattr(
+        #                 self.cfg.trainer, "val_metrics_batch_size", 100)),
+        #             accelerated_cd=True
+        #         )
+        #         all_res = {
+        #             ("val/gen/%s" % k):
+        #                 (v if isinstance(v, float) else v.item())
+        #             for k, v in gen_res.items()}
+        #         print("Validation Sample (unit) Epoch:%d " % epoch, gen_res)
 
 
-        Call super class validation
-        if getattr(self.cfg.trainer, "validate_recon", False):
-            all_res.update(super().validate(
-                test_loader, epoch, *args, **kwargs))
+        # # Call super class validation
+        # if getattr(self.cfg.trainer, "validate_recon", False):
+        #     all_res.update(super().validate(
+        #         test_loader, epoch, *args, **kwargs))
 
         return all_res
