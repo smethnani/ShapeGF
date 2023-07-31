@@ -273,10 +273,10 @@ class Trainer(BaseTrainer):
                 z = self.gen(z=prior)
                 samples, _, _ = self.generate_sample(z)
                 generated = [samples[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
+                # zs = [z[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
                 wandb.log({
                     "generated_samples": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
-                    "prior": [prior[idx][0] for idx in range(z.shape[0])],
-                    "z" [z[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
+                    "prior": [prior[idx][0] for idx in range(z.shape[0])]
                     })
 
 
@@ -326,8 +326,8 @@ class Trainer(BaseTrainer):
 
 
         # Call super class validation
-        if getattr(self.cfg.trainer, "validate_recon", False):
-            all_res.update(super().validate(
-                test_loader, epoch, *args, **kwargs))
+        # if getattr(self.cfg.trainer, "validate_recon", False):
+        #     all_res.update(super().validate(
+        #         test_loader, epoch, *args, **kwargs))
 
         return all_res
