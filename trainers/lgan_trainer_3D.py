@@ -60,7 +60,7 @@ class Trainer(BaseTrainer):
             print(self.cfg.trainer.ae_pretrained)
             strict = getattr(self.cfg.trainer, "resume_strict", True)
             self.encoder.load_state_dict(ckpt['enc'], strict=strict)
-            self.score_net.load_state_dict(ckpt['sn'], strict=strict)
+            self.vnet.load_state_dict(ckpt['vn'], strict=strict)
             if getattr(self.cfg.trainer, "resume_opt", False):
                 self.opt_enc.load_state_dict(ckpt['opt_enc'])
                 self.opt_dec.load_state_dict(ckpt['opt_dec'])
@@ -222,7 +222,7 @@ class Trainer(BaseTrainer):
             'opt_dec': self.opt_dec.state_dict(),
             'opt_dis': self.opt_dis.state_dict(),
             'opt_gen': self.opt_gen.state_dict(),
-            'sn': self.score_net.state_dict(),
+            'vn': self.vnet.state_dict(),
             'enc': self.encoder.state_dict(),
             'dis': self.dis.state_dict(),
             'gen': self.gen.state_dict(),
@@ -238,7 +238,7 @@ class Trainer(BaseTrainer):
     def resume(self, path, strict=True, **args):
         ckpt = torch.load(path)
         self.encoder.load_state_dict(ckpt['enc'], strict=strict)
-        self.score_net.load_state_dict(ckpt['sn'], strict=strict)
+        self.vnet.load_state_dict(ckpt['vn'], strict=strict)
         self.opt_enc.load_state_dict(ckpt['opt_enc'])
         self.opt_dec.load_state_dict(ckpt['opt_dec'])
         start_epoch = ckpt['epoch']
@@ -257,7 +257,8 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             self.gen.eval()
             z = self.gen(bs=num_shapes)
-            return self.langevin_dynamics(z, num_points=num_points)
+            noise = torch.randn((z.shape[0], num_points, 3))
+            return self.generate_sample(z, noise=noise, num_points=num_points)
 
     def validate(self, test_loader, epoch, *args, **kwargs):
         all_res = {}
