@@ -270,7 +270,8 @@ class Trainer(BaseTrainer):
                 print("l-GAN validation:")
                 self.gen.eval()
                 prior = torch.linspace(-2, 2, 30).unsqueeze(1).repeat(1, 3)
-                z = self.gen(z=prior, bs=prior.shape[0])
+                prior = prior.cuda()
+                z = self.gen(z=prior)
                 samples, _, _ = self.generate_sample(z=z)
                 print(f'z shape: {z.shape}')
                 generated = [samples[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
