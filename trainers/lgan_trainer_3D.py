@@ -175,13 +175,14 @@ class Trainer(BaseTrainer):
             train_info.update(super().update(train_data, no_update=True))
         super().log_train(train_info, train_data, writer=writer, step=step,
                           epoch=epoch, visualize=visualize)
+        bins = 256
         if step is not None:
-            writer.add_histogram('tr/latent_real', train_info['x_real'], step, bins=512)
-            writer.add_histogram('tr/latent_fake', train_info['x_fake'], step, bins=512)
+            writer.add_histogram('tr/latent_real', train_info['x_real'], step, bins=bins)
+            writer.add_histogram('tr/latent_fake', train_info['x_fake'], step, bins=bins)
         else:
             assert epoch is not None
-            writer.add_histogram('tr/latent_real', train_info['x_real'], epoch, bins=512)
-            writer.add_histogram('tr/latent_fake', train_info['x_fake'], epoch, bins=512)
+            writer.add_histogram('tr/latent_real', train_info['x_real'], epoch, bins=bins)
+            writer.add_histogram('tr/latent_fake', train_info['x_fake'], epoch, bins=bins)
 
         if visualize:
             with torch.no_grad():
