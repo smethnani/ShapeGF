@@ -276,13 +276,13 @@ class Trainer(BaseTrainer):
                     if not done_interp:
                         bs = inp_pts.shape[0]
                         self.gen.eval()
-                        prior = torch.linspace(-2, 2, bs).unsqueeze(1).repeat(1, 3)
+                        prior = torch.linspace(-2, 2, bs).unsqueeze(1).repeat(1, 128)
                         prior = prior.cuda()
                         print(f'prior shape: {prior.shape}')
-                        z = self.gen(bs=bs)
-                        print(f'z shape: {z.shape}')
+                        # z = self.gen(bs=bs)
 
                         z = self.gen(z=prior)
+                        print(f'z shape: {z.shape}')
                         samples, _, _ = self.generate_sample(z=z)
                         print(f'z shape: {z.shape}')
                         generated = [samples[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
