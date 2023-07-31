@@ -356,7 +356,7 @@ class Trainer(BaseTrainer):
             z, _ = self.encoder(tr_pts)
             x0 = torch.randn((z.size(0), num_points, dim), dtype=torch.float, device=z.device)
             x1, _, _ = self.generate_sample(z, noise=x0, num_points=num_points, n_timesteps=1000)
-            return [x0, x1]
+            return [x0, x1, z]
 
     def reconstruct(self, inp, num_points=2048, n_timesteps=1000, save_img_freq=200):
         with torch.no_grad():

@@ -268,49 +268,61 @@ class Trainer(BaseTrainer):
         if eval_generation:
             with torch.no_grad():
                 print("l-GAN validation:")
-                all_ref, all_smp = [], []
-                for data in tqdm.tqdm(test_loader):
-                    ref_pts = data['te_points'].cuda()
-                    inp_pts = data['tr_points'].cuda()
-                    smp_pts, _ = self.sample(
-                        num_shapes=inp_pts.size(0),
-                        num_points=inp_pts.size(1),
-                    )
-                    all_smp.append(smp_pts.view(
-                        ref_pts.size(0), ref_pts.size(1), ref_pts.size(2)))
-                    all_ref.append(
-                        ref_pts.view(ref_pts.size(0), ref_pts.size(1),
-                                     ref_pts.size(2)))
 
-                smp = torch.cat(all_smp, dim=0)
-                np.save(
-                    os.path.join(self.cfg.save_dir, 'val',
-                                 'smp_ep%d.npy' % epoch),
-                    smp.detach().cpu().numpy()
-                )
-                ref = torch.cat(all_ref, dim=0)
+                prior = torch.linspace(-2, 2, 30).unsqueeze(1).repeat(1, 3)
+                z = self.gen(z=prior)
+                samples, _, _ = self.generate_sample(z)
+                generated = [samples[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
+                wandb.log({
+                    "generated_samples": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
+                    "prior": [prior[idx][0] for idx in range(z.shape[0])],
+                    "z" [z[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
+                    })
 
-                # Sample CD/EMD
-                # step 1: subsample shapes
-                max_gen_vali_shape = int(getattr(
-                    self.cfg.trainer, "max_gen_validate_shapes",
-                    int(smp.size(0))))
-                sub_sampled = random.sample(
-                    range(smp.size(0)), min(smp.size(0), max_gen_vali_shape))
-                smp_sub = smp[sub_sampled, ...].contiguous()
-                ref_sub = ref[sub_sampled, ...].contiguous()
 
-                gen_res = compute_all_metrics(
-                    smp_sub, ref_sub,
-                    batch_size=int(getattr(
-                        self.cfg.trainer, "val_metrics_batch_size", 100)),
-                    accelerated_cd=True
-                )
-                all_res = {
-                    ("val/gen/%s" % k):
-                        (v if isinstance(v, float) else v.item())
-                    for k, v in gen_res.items()}
-                print("Validation Sample (unit) Epoch:%d " % epoch, gen_res)
+                # all_ref, all_smp = [], []
+                # for data in tqdm.tqdm(test_loader):
+                #     ref_pts = data['te_points'].cuda()
+                #     inp_pts = data['tr_points'].cuda()
+                #     smp_pts, _, _ = self.sample(
+                #         num_shapes=inp_pts.size(0),
+                #         num_points=inp_pts.size(1),
+                #     )
+                #     all_smp.append(smp_pts.view(
+                #         ref_pts.size(0), ref_pts.size(1), ref_pts.size(2)))
+                #     all_ref.append(
+                #         ref_pts.view(ref_pts.size(0), ref_pts.size(1),
+                #                      ref_pts.size(2)))
+
+                # smp = torch.cat(all_smp, dim=0)
+                # np.save(
+                #     os.path.join(self.cfg.save_dir, 'val',
+                #                  'smp_ep%d.npy' % epoch),
+                #     smp.detach().cpu().numpy()
+                # )
+                # ref = torch.cat(all_ref, dim=0)
+
+                # # Sample CD/EMD
+                # # step 1: subsample shapes
+                # max_gen_vali_shape = int(getattr(
+                #     self.cfg.trainer, "max_gen_validate_shapes",
+                #     int(smp.size(0))))
+                # sub_sampled = random.sample(
+                #     range(smp.size(0)), min(smp.size(0), max_gen_vali_shape))
+                # smp_sub = smp[sub_sampled, ...].contiguous()
+                # ref_sub = ref[sub_sampled, ...].contiguous()
+
+                # gen_res = compute_all_metrics(
+                #     smp_sub, ref_sub,
+                #     batch_size=int(getattr(
+                #         self.cfg.trainer, "val_metrics_batch_size", 100)),
+                #     accelerated_cd=True
+                # )
+                # all_res = {
+                #     ("val/gen/%s" % k):
+                #         (v if isinstance(v, float) else v.item())
+                #     for k, v in gen_res.items()}
+                # print("Validation Sample (unit) Epoch:%d " % epoch, gen_res)
 
 
         # Call super class validation
