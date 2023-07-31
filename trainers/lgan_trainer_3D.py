@@ -268,15 +268,16 @@ class Trainer(BaseTrainer):
         if eval_generation:
             with torch.no_grad():
                 print("l-GAN validation:")
-
+                self.gen.eval()
                 prior = torch.linspace(-2, 2, 30).unsqueeze(1).repeat(1, 3)
-                z = self.gen(z=prior)
-                samples, _, _ = self.generate_sample(z)
+                z = self.gen(z=prior, bs=prior.shape[0])
+                samples, _, _ = self.generate_sample(z=z)
+                print(f'z shape: {z.shape}')
                 generated = [samples[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
+                print(f'prior: {prior}')
                 # zs = [z[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
                 wandb.log({
-                    "generated_samples": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated],
-                    "prior": [prior[idx][0] for idx in range(z.shape[0])]
+                    "generated_samples": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated]
                     })
 
 
