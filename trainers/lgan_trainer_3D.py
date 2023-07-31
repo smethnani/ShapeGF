@@ -193,7 +193,7 @@ class Trainer(BaseTrainer):
                     getattr(self.cfg.viz, "num_vis_samples", 5),
                     gtr.size(0)
                 )
-                smp, smp_list = self.sample(num_shapes=num_vis,
+                smp, smp_list, _ = self.sample(num_shapes=num_vis,
                                             num_points=inp.size(1))
 
                 all_imgs = []
