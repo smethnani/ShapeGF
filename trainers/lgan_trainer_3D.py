@@ -193,7 +193,7 @@ class Trainer(BaseTrainer):
                     getattr(self.cfg.viz, "num_vis_samples", 5),
                     gtr.size(0)
                 )
-                smp, smp_list, _ = self.sample(num_shapes=num_vis,
+                smp, smp_list, timestamps = self.sample(num_shapes=num_vis,
                                             num_points=inp.size(1))
 
                 all_imgs = []
@@ -206,7 +206,8 @@ class Trainer(BaseTrainer):
                     'tr_vis/gen', torch.as_tensor(img), step)
 
                 img = visualize_procedure(
-                    self.sigmas, smp_list, gtr, num_vis, self.cfg, "gen")
+                     timestamps, smp_list, gtr, num_vis, self.cfg, "gen")
+                    # self.sigmas, smp_list, gtr, num_vis, self.cfg, "gen")
                 writer.add_image(
                     'tr_vis/gen_process', torch.as_tensor(img), step)
                 print("Saving point clouds")
