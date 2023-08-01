@@ -13,10 +13,13 @@ from trainers.utils.utils import get_opt, get_prior, \
 try:
     from evaluation.evaluation_metrics import EMD_CD
     eval_reconstruciton = True
+    print(f'Imported EMD_CD: {eval_reconstruciton}')
 except Exception as e:  # noqa
     # Skip evaluation
-    print(f'Error: {e}')
+    print(f'******** EVAL WARNING ******* \n{e}')
+    print(f'EXITING')
     eval_reconstruciton = False
+    exit(0)
 
 def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
     t = torch.rand((z1.shape[0], 1, 1)).to(z1.device)
