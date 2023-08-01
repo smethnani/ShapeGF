@@ -36,4 +36,4 @@ pretrained
 wandb/
 jobs/
 **/jobs/
-hpc-job*.sh
+hpc*.sh
