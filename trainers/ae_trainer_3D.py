@@ -211,6 +211,7 @@ class Trainer(BaseTrainer):
 
     def validate(self, test_loader, epoch, *args, **kwargs):
         if not eval_reconstruciton:
+            print(f'No metrics evaluator. Exiting validation...')
             return {}
 
         print("Validation (reconstruction):")
