@@ -11,7 +11,7 @@ from trainers.utils.utils import get_opt, get_prior, \
     ground_truth_reconstruct_multi, set_random_seed
 
 try:
-    from evaluation.evaluation_metrics import EMD_CD
+    from metrics.evaluation_metrics import EMD_CD
     eval_reconstruciton = True
     print(f'Imported EMD_CD: {eval_reconstruciton}')
 except Exception as e:  # noqa
