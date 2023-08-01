@@ -1,5 +1,5 @@
 import torch
-import metrics.PyTorchEMD.emd_cuda
+import metrics.PyTorchEMD.emd_cuda as emd_cuda
 
 class EarthMoverDistanceFunction(torch.autograd.Function):
     @staticmethod
