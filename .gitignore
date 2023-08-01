@@ -33,3 +33,7 @@ logs
 logs_*/
 
 pretrained
+wandb/
+jobs/
+**/jobs/
+hpc-job*.sh
