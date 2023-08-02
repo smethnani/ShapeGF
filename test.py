@@ -90,8 +90,9 @@ def main_worker(cfg, args):
     # artifact_dir = artifact.download(root=args.pretrained)
     # trainer.resume(artifact_dir)
     print(cfg.save_dir)
-    val_info = trainer.validate(test_loader, epoch=-1)
-    # val_info = trainer.test_recon(test_loader, epoch=-1)
+    # val_info = trainer.validate(test_loader, epoch=-1)
+    bs = cfg.data.batch_size
+    val_info = trainer.interpolate(bs=bs, epoch=-1)
     wandb.log(val_info)
 
     print("Test done:")
