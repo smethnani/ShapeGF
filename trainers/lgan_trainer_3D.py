@@ -358,10 +358,10 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             print("l-GAN interpolation:")
             self.gen.eval()
+            z1 = self.gen(bs=bs)
+            z2 = self.gen(bs=bs)
             taus = torch.arange(0, 11) * 0.1
             for tau in taus:
-                z1 = self.gen(bs=bs)
-                z2 = self.gen(bs=bs)
                 z = (z1 * (1-tau) + z2*tau)/((1-tau)**2 + tau**2)
 
                 print(f'z shape: {z.shape}')
