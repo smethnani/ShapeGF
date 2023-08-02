@@ -360,7 +360,7 @@ class Trainer(BaseTrainer):
             self.gen.eval()
             z1 = self.gen(bs=bs)
             z2 = self.gen(bs=bs)
-            taus = torch.arange(0, 11) * 0.1
+            taus = torch.arange(0, 21) * 0.05
             for tau in taus:
                 z = (z1 * (1-tau) + z2*tau)/((1-tau)**2 + tau**2)
 

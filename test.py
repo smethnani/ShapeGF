@@ -92,7 +92,7 @@ def main_worker(cfg, args):
     print(cfg.save_dir)
     # val_info = trainer.validate(test_loader, epoch=-1)
     # bs = cfg.data.batch_size
-    val_info = trainer.interpolate(bs=1, epoch=-1)
+    val_info = trainer.interpolate(bs=10, epoch=-1)
     wandb.log(val_info)
 
     print("Test done:")
