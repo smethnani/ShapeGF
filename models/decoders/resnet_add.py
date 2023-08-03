@@ -155,7 +155,7 @@ class Decoder(nn.Module):
     def forward(self, x, c, t):
         """
         :param x: (bs, npoints, self.dim) Input coordinate (xyz)
-        :param c: (bs, self.zdim + 1) Shape latent code + sigma
+        :param c: (bs, self.zdim + 1) Shape latent code + sigma, t=(B, 1, tdim)
         :return: (bs, npoints, self.dim) Gradient (self.dim dimension)
         """
         p = x.transpose(1, 2)  # (bs, dim, n_points)
