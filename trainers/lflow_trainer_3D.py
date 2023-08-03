@@ -52,7 +52,7 @@ class Trainer(BaseTrainer):
         print("Generator:")
         print(self.gen)
 
-        dis_lib = importlib.import_module(cfg.models.dis.type)
+        # dis_lib = importlib.import_module(cfg.models.dis.type)
         # self.dis = dis_lib.Discriminator(cfg, cfg.models.dis)
         # self.dis.cuda()
         # print("Discriminator:")
@@ -103,9 +103,7 @@ class Trainer(BaseTrainer):
 
     def _update(self, data, gen=False):
         self.gen.train()
-        # self.dis.train()
         self.opt_gen.zero_grad()
-        # self.opt_dis.zero_grad()
         if self.gan_pass_update_enc:
             self.encoder.train()
             self.opt_enc.zero_grad()
@@ -307,38 +305,6 @@ class Trainer(BaseTrainer):
             all_res.update(super().validate(
                 test_loader, epoch, *args, **kwargs))
 
-        return all_res
-
-    def interpolate_loader(self, test_loader, epoch, *args, **kwargs):
-        all_res = {}
-        done_interp = False
-        eval_generation = True
-        if eval_generation:
-            with torch.no_grad():
-                all_ref, all_smp = [], []
-                for data in tqdm.tqdm(test_loader):
-                    print("l-flow interpolation:")
-                    ref_pts = data['te_points'].cuda()
-                    inp_pts = data['tr_points'].cuda()
-                    if not done_interp:
-                        bs = inp_pts.shape[0]
-                        self.gen.eval()
-                        prior = torch.linspace(-2, 2, bs).unsqueeze(1).repeat(1, 128)
-                        prior = prior.cuda()
-                        print(f'prior shape: {prior.shape}')
-                        # z = self.gen(bs=bs)
-
-                        z = self.gen(z=prior)
-                        print(f'z shape: {z.shape}')
-                        samples, _, _ = self.generate_sample(z=z)
-                        print(f'z shape: {z.shape}')
-                        generated = [samples[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
-                        # print(f'prior: {prior}')
-                        # zs = [z[idx].cpu().detach().numpy() for idx in range(z.shape[0])]
-                        wandb.log({
-                            "generated_samples": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in generated]
-                            })
-                        done_interp = True
         return all_res
 
     def interpolate(self, bs, *args, **kwargs):
