@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 
 # Taken from https://discuss.pytorch.org/t/implementing-truncated-normal-initializer/4778/15
