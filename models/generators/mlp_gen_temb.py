@@ -66,7 +66,8 @@ class Generator(nn.Module):
         beta = t.view(batch_size, 1, 1)          # (B, 1, 1)
         context = c.view(batch_size, 1, -1)   # (B, 1, F)
 
-        time_emb = torch.cat([beta, torch.sin(beta), torch.cos(beta)], dim=-1)  # (B, 1, 3)
+        # time_emb = torch.cat([beta, torch.sin(beta), torch.cos(beta)], dim=-1)  # (B, 1, 3)
+        time_emb = self.get_timestep_embedding(t, t.device)
         print(f'z: {c.shape} t_expand: {time_emb.shape}')
         z = torch.cat([c, time_emb], dim=-1)    # (B, 1, F+3)
 
