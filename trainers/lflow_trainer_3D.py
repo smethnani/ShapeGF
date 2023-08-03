@@ -71,7 +71,7 @@ class Trainer(BaseTrainer):
         # book keeping
         # self.total_iters = 0
         # self.total_gan_iters = 0
-        # self.gan_only = getattr(self.cfg.trainer, "gan_only", True)
+        self.gan_only = getattr(self.cfg.trainer, "gan_only", True)
 
         # If pretrained AE, then load it up
         if hasattr(self.cfg.trainer, "ae_pretrained"):
