@@ -61,6 +61,7 @@ class Generator(nn.Module):
         #     assert bs is not None
         #     z = self.get_prior(bs).cuda()
         time_emb = self.get_timestep_embedding(t, t.device)
+        time_emb = time_emb.unsqueeze()
         print(f'c: {c.shape} time_emb: {time_emb.shape}')
         z = torch.cat([c, time_emb], dim=-1)
         y = z
