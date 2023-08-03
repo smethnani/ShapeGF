@@ -55,11 +55,11 @@ class Generator(nn.Module):
     #         raise NotImplementedError(
     #             "Invalid prior type:%s" % self.prior_type)
 
-    def forward(self, c, t=None, bs=None):
+    def forward(self, c, t, bs=None):
         # if z is None:
         #     assert bs is not None
         #     z = self.get_prior(bs).cuda()
-        time_emb = get_timestep_embedding(t, c.device)
+        time_emb = self.get_timestep_embedding(t, c.device)
         z = torch.cat([c, time_emb], dim=-1)
         y = z
         for layer, bn in zip(self.layers, self.bns):
