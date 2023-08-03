@@ -60,7 +60,8 @@ class Generator(nn.Module):
         # if z is None:
         #     assert bs is not None
         #     z = self.get_prior(bs).cuda()
-        time_emb = self.get_timestep_embedding(t, c.device)
+        time_emb = self.get_timestep_embedding(t, t.device)
+        print(f'c: {c.shape} time_emb: {time_emb.shape}')
         z = torch.cat([c, time_emb], dim=-1)
         y = z
         for layer, bn in zip(self.layers, self.bns):
