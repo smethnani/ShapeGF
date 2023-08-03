@@ -25,8 +25,8 @@ class Generator(nn.Module):
         self.use_bn = getattr(cfgmodel, "use_bn", False)
         self.output_bn = getattr(cfgmodel, "output_bn", False)
         self.dims = cfgmodel.dims
-
-        curr_dim = self.inp_dim + cfgmodel.t_dim
+        self.t_dim = cfgmodel.t_dim
+        curr_dim = self.inp_dim + self.t_dim
         self.layers = []
         self.bns = []
         for hid in self.dims:
