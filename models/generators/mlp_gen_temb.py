@@ -60,10 +60,21 @@ class Generator(nn.Module):
         # if z is None:
         #     assert bs is not None
         #     z = self.get_prior(bs).cuda()
-        time_emb = self.get_timestep_embedding(t, t.device)
-        time_emb = time_emb.unsqueeze(1)
-        print(f'c: {c.shape} time_emb: {time_emb.shape}')
-        z = torch.cat([c, time_emb], dim=-1)
+
+
+        batch_size = c.size(0)
+        beta = t.view(batch_size, 1, 1)          # (B, 1, 1)
+        # context = context.view(batch_size, 1, -1)   # (B, 1, F)
+
+        time_emb = torch.cat([beta, torch.sin(beta), torch.cos(beta)], dim=-1)  # (B, 1, 3)
+        z = torch.cat([c, time_emb], dim=-1)    # (B, 1, F+3)
+
+
+        # time_emb = self.get_timestep_embedding(t, t.device)
+        # # time_emb = time_emb.unsqueeze(-1)
+        # t_expand = time_emb.unsqueeze(2).expand(-1, -1, c.shape[-1])
+        print(f'z: {z.shape} t_expand: {time_emb.shape}')
+        # z = torch.cat([c, t_expand], dim=-1)
         y = z
         for layer, bn in zip(self.layers, self.bns):
             y = layer(y)
