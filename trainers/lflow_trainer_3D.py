@@ -26,7 +26,7 @@ def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
     return z_t, t * 999, target
 
 def flow_matching_loss(vnet, data, noise=None):
-    B, D, N = data.shape
+    # B, D, N = data.shape
     if noise is None:
         noise = torch.randn_like(data)
     noise = noise.to(data.device)
