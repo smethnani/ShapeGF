@@ -83,8 +83,8 @@ class Trainer(BaseTrainer):
             if getattr(self.cfg.trainer, "resume_opt", False):
                 self.opt_enc.load_state_dict(ckpt['opt_enc'])
                 self.opt_dec.load_state_dict(ckpt['opt_dec'])
-        # self.gan_pass_update_enc = getattr(
-        #     self.cfg.trainer, "gan_pass_update_enc", False)
+        self.gan_pass_update_enc = getattr(
+            self.cfg.trainer, "gan_pass_update_enc", False)
 
     def epoch_end(self, epoch, writer=None, **kwargs):
         super().epoch_end(epoch, writer=writer)
