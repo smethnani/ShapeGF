@@ -135,7 +135,7 @@ class Trainer(BaseTrainer):
                     "gtr": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in ground_truth]
                     })
 
-    def save(self, epoch=None, step=None, appendix=None, **kwargs):
+    def save(self, epoch=None, step=None, appendix=None, wandb_run=None, **kwargs):
         d = {
             'opt_enc': self.opt_enc.state_dict(),
             'opt_dec': self.opt_dec.state_dict(),
@@ -150,9 +150,13 @@ class Trainer(BaseTrainer):
         }
         if appendix is not None:
             d.update(appendix)
-        save_name = "epoch_%s_iters_%s.pt" % (epoch, step)
+        save_name = "lflow-prior-epoch_%s_iters_%s.pt" % (epoch, step)
         path = os.path.join(self.cfg.save_dir, "checkpoints", save_name)
         torch.save(d, path)
+        if wandb_run is not None:
+            artifact = wandb.Artifact(save_name, type='model')
+            artifact.add_file(path)
+            wandb_run.log_artifact(artifact)
 
     def resume(self, path, strict=True, **args):
         ckpt = torch.load(path)
