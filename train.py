@@ -121,9 +121,8 @@ def main_worker(cfg, args, wandb_run=None):
             if step % int(cfg.viz.log_freq) == 0:
                 duration = time.time() - start_time
                 start_time = time.time()
-                epoch_info = "Epoch %d Batch [%2d/%2d] Time [%3.2fs] Loss %2.5f"
-                      % (epoch, bidx, len(train_loader), duration,
-                         logs_info['loss'])
+                epoch_info = "Epoch %d Batch [%2d/%2d] Time [%3.2fs] Loss %2.5f" \
+                            % (epoch, bidx, len(train_loader), duration, logs_info['loss'])
                 if 'lr' in logs_info:
                     lr = f' lr: {logs_info['lr']}'
                     epoch_info = epoch_info + lr
