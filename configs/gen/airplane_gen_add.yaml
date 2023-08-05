@@ -82,7 +82,6 @@ models:
     param_likelihood: False
     xyz_condition: True
     z_dim: 128
-    t_dim: 64
   encoder:
     type: models.encoders.l3dp_encoder
     use_deterministic_encoder: True
