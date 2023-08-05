@@ -19,7 +19,7 @@ viz:
   val_freq: -1
 
 trainer:
-  type: trainers.lgan_trainer_3D
+  type: trainers.lflow_trainer_3D
   epochs: 2000
   seed: 100
 
