@@ -63,7 +63,7 @@ class Generator(nn.Module):
         #     z = self.get_prior(bs).cuda()
         time_emb = self.time_mlp(t)
         # y = z
-        print(f'z shape: {z.shape} t: {t.shape} time_emb: {time_emb.shape}')
+        # z shape: torch.Size([256, 128]) t: torch.Size([256]) time_emb: torch.Size([256, 64])
         y = torch.cat([z, time_emb], dim=-1)
         for layer, bn in zip(self.layers, self.bns):
             y = layer(y)

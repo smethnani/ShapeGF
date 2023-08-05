@@ -26,8 +26,7 @@ def get_train_tuple(z0=None, z1=None, n_timesteps=1_000):
     return z_t, (t * (n_timesteps-1)).type(torch.int64), target
 
 def flow_matching_loss(vnet, data, noise=None):
-    # B, D, N = data.shape
-    print(f'data.shape: {data.shape}')
+    # B, D = data.shape: torch.Size([256, 128])
     if noise is None:
         noise = torch.randn_like(data)
     noise = noise.to(data.device)
@@ -95,22 +94,6 @@ class Trainer(BaseTrainer):
         return {
             'loss': loss
         }
-
-    # def update_lgan(self, data):
-    #     self.total_gan_iters += 1
-    #     res = {}
-    #     dis_res = self._update_gan_(data, gen=False)
-    #     res.update(dis_res)
-    #     return res
-
-    # def update(self, data, *args, **kwargs):
-    #     res = {}
-    #     # if not self.gan_only:
-    #     #     ae_res = super().update(data, *args, **kwargs)
-    #     #     res.update(ae_res)
-    #     gan_res = self._update_gan_(data)
-    #     res.update(gan_res)
-    #     return res
 
     def log_train(self, train_info, train_data, writer=None,
                   step=None, epoch=None, visualize=False, **kwargs):
