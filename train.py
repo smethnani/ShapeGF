@@ -124,7 +124,7 @@ def main_worker(cfg, args, wandb_run=None):
                 epoch_info = "Epoch %d Batch [%2d/%2d] Time [%3.2fs] Loss %2.5f" \
                             % (epoch, bidx, len(train_loader), duration, logs_info['loss'])
                 if 'lr' in logs_info:
-                    lr = f' lr: {logs_info['lr']}'
+                    lr = f" lr: {logs_info['lr']}"
                     epoch_info = epoch_info + lr
                 print(epoch_info)
                 visualize = step % int(cfg.viz.viz_freq) == 0 and \
