@@ -92,7 +92,7 @@ class Trainer(BaseTrainer):
         loss.backward()
         self.opt_gen.step()
         return {
-            'loss': loss
+            'loss': loss,
             'lr': get_lr(self.opt_gen)
         }
 
