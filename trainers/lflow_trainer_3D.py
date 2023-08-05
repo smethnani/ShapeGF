@@ -5,7 +5,7 @@ import random
 import importlib
 import wandb
 import numpy as np
-from trainers.utils.utils import get_opt
+from trainers.utils.utils import get_opt, get_lr
 from trainers.ae_trainer_3D import Trainer as BaseTrainer
 from trainers.utils.gan_losses import gen_loss, dis_loss, gradient_penalty
 from trainers.utils.vis_utils import visualize_procedure, \
@@ -93,6 +93,7 @@ class Trainer(BaseTrainer):
         self.opt_gen.step()
         return {
             'loss': loss
+            'lr': get_lr(self.opt_gen)
         }
 
     def log_train(self, train_info, train_data, writer=None,

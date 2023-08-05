@@ -57,6 +57,10 @@ def get_opt(params, cfgopt):
         else:
             assert 0, "args.schedulers should be either 'exponential' or 'linear' or 'step'"
     return optimizer, scheduler
+    
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
 
 
 def set_random_seed(seed):
