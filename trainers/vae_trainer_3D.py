@@ -84,6 +84,10 @@ class Trainer(BaseTrainer):
 
         # Prepare variable for summy
         self.oracle_res = None
+        if args.loss_type == 'chamfer':
+            self.lossfn = chamfer_distance
+        else:
+            self.lossfn = SlicedWassersteinDist()
 
     def multi_gpu_wrapper(self, wrapper):
         self.encoder = wrapper(self.encoder)
@@ -131,9 +135,9 @@ class Trainer(BaseTrainer):
         target = tr_pts.transpose(1, 2)
         loss = 0
         if self.args.loss_type == 'chamfer':
-            loss, _ = chamfer_distance(pred, target)
+            loss, _ = self.lossfn(pred, target)
         else:
-            loss = SlicedWassersteinDist(pred, target)
+            loss = self.lossfn(pred, target)
         # loss = res['loss']
         if not no_update:
             loss.backward()
