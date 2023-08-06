@@ -173,9 +173,10 @@ class Trainer(BaseTrainer):
             self.opt_gen.load_state_dict(ckpt['opt_gen'])
         return start_epoch
 
-    def sample(self, num_shapes=1, num_points=2048, n_timesteps=1000):
+    def sample(self, num_shapes=1, num_points=2048, n_timesteps=1000, z=None):
         with torch.no_grad():
-            z = self.sample_latent(num_shapes=num_shapes, n_timesteps=n_timesteps)
+            if z is None:
+                z = self.sample_latent(num_shapes=num_shapes, n_timesteps=n_timesteps)
             noise = torch.randn((z.shape[0], num_points, 3))
             return self.generate_sample(z, noise=noise, num_points=num_points)
 
