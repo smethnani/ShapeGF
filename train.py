@@ -47,6 +47,7 @@ def get_args():
     # Test run:
     parser.add_argument('--test_run', default=False, action='store_true')
     parser.add_argument('--run_id', default=None)
+    parser.add_argument('--loss_type', default="chamfer", type=str)
     args = parser.parse_args()
 
     def dict2namespace(config):

@@ -9,6 +9,7 @@ from trainers.utils.vis_utils import visualize_point_clouds_3d, \
     visualize_procedure
 from trainers.utils.utils import get_opt, get_prior, \
     ground_truth_reconstruct_multi, set_random_seed
+from trainers.utils.ot_loss import SlicedWassersteinDist
 from pytorch3d.loss import chamfer_distance
 # import metrics.chamfer3D.dist_chamfer_3D
 # chamfer_distance = chamfer3D.dist_chamfer_3D.chamfer_3DDist()
@@ -126,9 +127,13 @@ class Trainer(BaseTrainer):
         # noise = torch.randn(batch_size, tr_pts.shape[1], tr_pts.shape[2])
         # noise = noise.to(tr_pts.device)
         # res = flow_matching_loss(self.vnet, z, tr_pts, noise)
-        pred = self.decoder(z).transpose(1, 2)
+        pred = self.decoder(z)
         target = tr_pts.transpose(1, 2)
-        loss, _ = chamfer_distance(pred, target)
+        loss = 0
+        if self.args.loss_type == 'chamfer':
+            loss, _ = chamfer_distance(pred, target)
+        else:
+            loss = SlicedWassersteinDist(pred, target)
         # loss = res['loss']
         if not no_update:
             loss.backward()
@@ -168,7 +173,7 @@ class Trainer(BaseTrainer):
                     gtr.size(0))
 
                 print("Recon:")
-                rec, rec_list, timestamps = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000)
+                rec = self.reconstruct(inp=inp[:num_vis].cuda())
                 # print("Ground truth recon:")
                 # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
                 #     inp[:num_vis].cuda(), self.cfg)
@@ -198,11 +203,11 @@ class Trainer(BaseTrainer):
                 # writer.add_image(
                 #     'tr_vis/rec_gt_process', torch.as_tensor(img), step)
 
-                # Reconstruction procedure
-                img = visualize_procedure(
-                    timestamps, rec_list, gtr, num_vis, self.cfg, "Rec")
-                writer.add_image(
-                    'tr_vis/rec_process', torch.as_tensor(img), step)
+                # # Reconstruction procedure
+                # img = visualize_procedure(
+                #     timestamps, rec_list, gtr, num_vis, self.cfg, "Rec")
+                # writer.add_image(
+                #     'tr_vis/rec_process', torch.as_tensor(img), step)
 
     def validate(self, test_loader, epoch, *args, **kwargs):
         if not eval_reconstruciton:
@@ -218,7 +223,7 @@ class Trainer(BaseTrainer):
             m = data['mean'].cuda()
             std = data['std'].cuda()
             print(f'm: {m}, std: {std}')
-            rec_pts, _, _ = self.reconstruct(inp_pts, save_img_freq=1000)
+            rec_pts = self.reconstruct(inp_pts)
 
             # denormalize
             inp_pts_denorm = inp_pts.clone() * std + m
@@ -276,7 +281,7 @@ class Trainer(BaseTrainer):
             inp_pts = data['tr_points'].cuda()
             # rec_pts, _, _ = self.reconstruct(inp=inp[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
 
-            rec, rec_list, timestamps = self.reconstruct(inp=inp_pts[:num_vis].cuda(), n_timesteps=1000, save_img_freq=1000)
+            rec = self.reconstruct(inp=inp_pts[:num_vis].cuda())
             # print("Ground truth recon:")
             # rec_gt, rec_gt_list = ground_truth_reconstruct_multi(
             #     inp[:num_vis].cuda(), self.cfg)
@@ -318,45 +323,11 @@ class Trainer(BaseTrainer):
         start_epoch = ckpt['epoch']
         return start_epoch
 
-    def generate_sample(self, z, noise=None, num_points=2048, n_timesteps=1000, save_img_freq=None):
-        if noise is None:
-            noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
-        img_t = noise.clone()
-        img_t = img_t.to(z.device)
-        imgs = []
-        timestamps = []
-        dt = 1. / n_timesteps
-        with torch.no_grad():
-            self.decoder.eval()
-            for t in range(n_timesteps):
-                t_ = torch.empty(z.shape[0], dtype=torch.int64, device=z.device).fill_(t)
-                img_t = img_t + self.decoder(img_t, z, t_) * dt
-                if save_img_freq is not None and (t + 1) % save_img_freq == 0:
-                    imgs.append(img_t.clone())
-                    timestamps.append(t)
-        return img_t, imgs, timestamps
+    def generate_sample(self, z):
+        return self.decoder(z)
 
-    def sample(self, num_shapes=1, num_points=2048):
-        with torch.no_grad():
-            # z = torch.randn(num_shapes, self.cfg.models.encoder.zdim).cuda()
-            noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
-            return self.generate_sample(z, noise=noise, num_points=num_points)
-    
-    def gen_reflow_pairs(self, data, *args, **kwargs):
-        tr_pts = data['tr_points'].cuda()  # (B, #points, 3)smn_ae_trainer.py
-        batch_size = tr_pts.size(0)
-        num_points = self.cfg.inference.num_points
-        dim = self.cfg.models.scorenet.dim
-        with torch.no_grad():
-            self.encoder.eval()
-            z, _ = self.encoder(tr_pts)
-            x0 = torch.randn((z.size(0), num_points, dim), dtype=torch.float, device=z.device)
-            x1, _, _ = self.generate_sample(z, noise=x0, num_points=num_points, n_timesteps=1000)
-            return [x0, x1, z]
-
-    def reconstruct(self, inp, num_points=2048, n_timesteps=1000, save_img_freq=200):
+    def reconstruct(self, inp):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
-            return self.generate_sample(z, noise=noise, num_points=num_points, n_timesteps=n_timesteps, save_img_freq=save_img_freq)
+            return self.generate_sample(z)
