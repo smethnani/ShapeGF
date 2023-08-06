@@ -127,7 +127,7 @@ class Trainer(BaseTrainer):
         # noise = torch.randn(batch_size, tr_pts.shape[1], tr_pts.shape[2])
         # noise = noise.to(tr_pts.device)
         # res = flow_matching_loss(self.vnet, z, tr_pts, noise)
-        pred = self.decoder(z)
+        pred = self.decoder(z).transpose(1, 2)
         target = tr_pts.transpose(1, 2)
         loss = 0
         if self.args.loss_type == 'chamfer':
