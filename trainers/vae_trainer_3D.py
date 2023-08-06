@@ -9,7 +9,7 @@ from trainers.utils.vis_utils import visualize_point_clouds_3d, \
     visualize_procedure
 from trainers.utils.utils import get_opt, get_prior, \
     ground_truth_reconstruct_multi, set_random_seed
-from pytorch3d import chamfer_distance
+from pytorch3d.loss import chamfer_distance
 # import metrics.chamfer3D.dist_chamfer_3D
 # chamfer_distance = chamfer3D.dist_chamfer_3D.chamfer_3DDist()
 
