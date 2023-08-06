@@ -46,6 +46,7 @@ def get_args():
 
     # Test run:
     parser.add_argument('--test_run', default=False, action='store_true')
+    parser.add_argument('--run_id', default=None)
     args = parser.parse_args()
 
     def dict2namespace(config):
@@ -158,7 +159,7 @@ if __name__ == '__main__':
     print("Configuration:")
     print(cfg)
 
-    run = wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True)
+    run = wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True, id=args.run_id)
 
     main_worker(cfg, args, wandb_run=run)   
 
