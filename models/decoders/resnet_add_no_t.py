@@ -78,6 +78,7 @@ class Decoder(nn.Module):
         super().__init__()
         self.cfg = cfg
         self.z_dim = z_dim = cfg.z_dim
+        self.num_points = cfg.num_points
         self.dim = dim = cfg.dim
         self.out_dim = out_dim = cfg.out_dim
         self.hidden_size = hidden_size = cfg.hidden_size
@@ -101,9 +102,9 @@ class Decoder(nn.Module):
         :return: (bs, npoints, self.dim) Gradient (self.dim dimension)
         """
         # p = x.transpose(1, 2)  # (bs, dim, n_points)
-        batch_size, D, num_points = p.size()
+        # batch_size, D, num_points = p.size()
 
-        c_xyz = ctx_emb.unsqueeze(2).expand(-1, -1, num_points)
+        c_xyz = ctx_emb.unsqueeze(2).expand(-1, -1, self.num_points)
         #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
         # c_xyz = torch.cat([p, c_expand], dim=1)
         net = self.conv_p(c_xyz)
