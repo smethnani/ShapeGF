@@ -136,8 +136,7 @@ class Trainer(BaseTrainer):
             self.opt_dec.step()
 
         return {
-            'loss': loss.detach().cpu().item(),
-            'x': res['x'].detach().cpu()
+            'loss': loss.detach().cpu().item()
         }
 
     def log_train(self, train_info, train_data, writer=None,
