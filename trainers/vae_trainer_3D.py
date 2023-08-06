@@ -295,14 +295,14 @@ class Trainer(BaseTrainer):
         d = {
             'opt_enc': self.opt_enc.state_dict(),
             'opt_dec': self.opt_dec.state_dict(),
-            'vn': self.decoder.state_dict(),
+            'decoder': self.decoder.state_dict(),
             'enc': self.encoder.state_dict(),
             'epoch': epoch,
             'step': step
         }
         if appendix is not None:
             d.update(appendix)
-        save_name = "epoch_%s_iters_%s.pt" % (epoch, step)
+        save_name = "chamfer-ae-epoch_%s_iters_%s.pt" % (epoch, step)
         path = os.path.join(self.cfg.save_dir, "checkpoints", save_name)
         torch.save(d, path)
         if wandb_run is not None:
@@ -313,7 +313,7 @@ class Trainer(BaseTrainer):
     def resume(self, path, strict=True, **kwargs):
         ckpt = torch.load(path)
         self.encoder.load_state_dict(ckpt['enc'], strict=strict)
-        self.decoder.load_state_dict(ckpt['vn'], strict=strict)
+        self.decoder.load_state_dict(ckpt['decoder'], strict=strict)
         self.opt_enc.load_state_dict(ckpt['opt_enc'])
         self.opt_dec.load_state_dict(ckpt['opt_dec'])
         start_epoch = ckpt['epoch']
