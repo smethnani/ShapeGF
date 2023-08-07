@@ -61,6 +61,7 @@ def get_args(ngpus_per_node):
 
     # Test run:
     parser.add_argument('--test_run', default=False, action='store_true')
+    parser.add_argument('--run_id', default=None)
     args = parser.parse_args()
 
     def dict2namespace(config):
