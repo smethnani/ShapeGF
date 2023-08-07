@@ -160,7 +160,7 @@ if __name__ == '__main__':
     print("Configuration:")
     print(cfg)
 
-    run = wandb.init(config=cfg, project='shapes-exp', sync_tensorboard=True, id=args.run_id)
+    run = wandb.init(dir=cfg.log_dir, config=cfg, project='ShapeFlow', sync_tensorboard=True, id=args.run_id)
 
     main_worker(cfg, args, wandb_run=run)   
 

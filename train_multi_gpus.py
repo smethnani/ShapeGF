@@ -83,12 +83,12 @@ def get_args(ngpus_per_node):
     run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
     
     logdir = args.log
+    run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
     if logdir:
-        config.log_name = f"logs/{logdir}"
-        config.save_dir = f"logs/{logdir}"
-        config.log_dir = f"logs/{logdir}"
+        config.log_name = f"{logdir}/train-{run_time}"
+        config.save_dir = f"{logdir}/train-{run_time}"
+        config.log_dir = f"{logdir}/train-{run_time}"
     else:
-        run_time = time.strftime('%Y-%b-%d-%H-%M-%S')
         # Currently save dir and log_dir are the same
         config.log_name = "logs/%s_%s" % (cfg_file_name, run_time)
         config.save_dir = "logs/%s_%s" % (cfg_file_name, run_time)
@@ -118,6 +118,10 @@ def main_worker(gpu, ngpus_per_node, cfg, args):
         writer = SummaryWriter(log_dir=cfg.log_name)
     else:
         writer = None
+
+     
+    args.run_id = args.run_id + f'-gpu-{gpu}'
+    wandb_run = wandb.init(dir=opt.outdir, group='train-shapeflow', config=cfg, project='ShapeFlow', id=args.run_id)
 
     with torch.cuda.device(args.gpu):
         trainer_lib = importlib.import_module(cfg.trainer.type)
@@ -200,7 +204,7 @@ def main_worker(gpu, ngpus_per_node, cfg, args):
                 # Save first so that even if the visualization bugged,
                 # we still have something
                 if (epoch + 1) % int(cfg.viz.save_freq) == 0:
-                    trainer.save(epoch=epoch, step=step)
+                    trainer.save(epoch=epoch, step=step, wandb_run=wandb_run)
 
             if (epoch + 1) % int(cfg.viz.val_freq) == 0:
                 val_info = trainer.validate(test_loader, epoch=epoch)
@@ -214,6 +218,7 @@ def main_worker(gpu, ngpus_per_node, cfg, args):
             # Signal the trainer to cleanup now that an epoch has ended
             trainer.epoch_end(epoch, writer=writer)
         writer.close()
+        wandb_run.finish()
 
 
 def main():
