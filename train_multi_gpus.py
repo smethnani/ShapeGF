@@ -12,7 +12,7 @@ import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.distributed as dist
 import numpy as np
-
+import wandb
 
 def init_np_seed(worker_id):
     seed = torch.initial_seed()
