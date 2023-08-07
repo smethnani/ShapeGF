@@ -150,7 +150,6 @@ class Trainer(BaseTrainer):
     def log_train(self, train_info, train_data, writer=None,
                   step=None, epoch=None, visualize=False, **kwargs):
         if writer is None:
-            print("No writer, exiting...")
             return
 
         # Log training information to tensorboard
@@ -309,10 +308,11 @@ class Trainer(BaseTrainer):
         }
         if appendix is not None:
             d.update(appendix)
-        save_name = "ae-flow-epoch_%s_iters_%s.pt" % (epoch, step)
+        save_name = f"ae-flow-epoch_%s_iters_%s.pt" % (epoch, step)
         path = os.path.join(self.cfg.save_dir, "checkpoints", save_name)
         torch.save(d, path)
         if wandb_run is not None:
+            save_name = f"{wandb_run.id}-epoch_%s_iters_%s.pt" % (epoch, step)
             artifact = wandb.Artifact(save_name, type='model')
             artifact.add_file(path)
             wandb_run.log_artifact(artifact)
