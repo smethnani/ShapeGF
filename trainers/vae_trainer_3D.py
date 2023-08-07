@@ -327,12 +327,12 @@ class Trainer(BaseTrainer):
         start_epoch = ckpt['epoch']
         return start_epoch
 
-    def generate_sample(self, z):
+    def generate_sample(self, z, num_points=2048):
         noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
         return self.decoder(x=noise, c=z)
 
-    def reconstruct(self, inp):
+    def reconstruct(self, inp, num_points=2048):
         with torch.no_grad():
             self.encoder.eval()
             z, _ = self.encoder(inp)
-            return self.generate_sample(z)
+            return self.generate_sample(z, num_points=num_points)
