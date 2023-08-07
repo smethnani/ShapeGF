@@ -309,7 +309,7 @@ class Trainer(BaseTrainer):
         }
         if appendix is not None:
             d.update(appendix)
-        save_name = "epoch_%s_iters_%s.pt" % (epoch, step)
+        save_name = "ae-flow-epoch_%s_iters_%s.pt" % (epoch, step)
         path = os.path.join(self.cfg.save_dir, "checkpoints", save_name)
         torch.save(d, path)
         if wandb_run is not None:
