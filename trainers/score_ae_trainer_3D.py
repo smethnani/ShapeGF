@@ -6,7 +6,7 @@ import wandb
 import numpy as np
 from trainers.base_trainer import BaseTrainer
 from trainers.utils.vis_utils import visualize_point_clouds_3d, \
-    visualize_procedure
+    visualize_procedure_sigma
 from trainers.utils.utils import get_opt, get_prior, \
     ground_truth_reconstruct_multi, set_random_seed
 
@@ -198,13 +198,13 @@ class Trainer(BaseTrainer):
                     'tr_vis/overview', torch.as_tensor(img), step)
 
                 # Reconstruction gt procedure
-                img = visualize_procedure(
+                img = visualize_procedure_sigma(
                     self.sigmas, rec_gt_list, gtr, num_vis, self.cfg, "Rec_gt")
                 writer.add_image(
                     'tr_vis/rec_gt_process', torch.as_tensor(img), step)
 
                 # Reconstruction procedure
-                img = visualize_procedure(
+                img = visualize_procedure_sigma(
                     self.sigmas, rec_list, gtr, num_vis, self.cfg, "Rec")
                 writer.add_image(
                     'tr_vis/rec_process', torch.as_tensor(img), step)

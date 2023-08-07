@@ -176,3 +176,18 @@ def visualize_procedure(sigmas, fig_list, gtr, num_vis, cfg, name="Rec_gt"):
     img = np.concatenate(all_imgs, axis=1)
     return img
 
+    def visualize_procedure_sigma(sigmas, fig_list, gtr, num_vis, cfg, name="Rec_gt"):
+    all_imgs = []
+    sigmas = np.append([0], sigmas)
+    for idx in range(num_vis):
+        img = visualize_point_clouds_3d(
+            [fig_list[i][idx] for i in
+             range(0, len(fig_list), 1)] + [gtr[idx]],
+            [(name + " step" +
+              str(i * int(getattr(cfg.inference, "num_steps", 5))) +
+              " sigma%.3f" % sigmas[i])
+             for i in range(0, len(fig_list), 1)] + ["gt shape"])
+        all_imgs.append(img)
+    img = np.concatenate(all_imgs, axis=1)
+    return img
+
