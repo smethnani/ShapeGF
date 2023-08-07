@@ -328,7 +328,8 @@ class Trainer(BaseTrainer):
         return start_epoch
 
     def generate_sample(self, z):
-        return self.decoder(z)
+        noise = torch.randn((z.size(0), num_points, self.cfg.models.scorenet.dim), dtype=torch.float, device=z.device)
+        return self.decoder(x=noise, c=z)
 
     def reconstruct(self, inp):
         with torch.no_grad():
