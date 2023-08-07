@@ -176,7 +176,7 @@ def visualize_procedure(sigmas, fig_list, gtr, num_vis, cfg, name="Rec_gt"):
     img = np.concatenate(all_imgs, axis=1)
     return img
 
-    def visualize_procedure_sigma(sigmas, fig_list, gtr, num_vis, cfg, name="Rec_gt"):
+def visualize_procedure_sigma(sigmas, fig_list, gtr, num_vis, cfg, name="Rec_gt"):
     all_imgs = []
     sigmas = np.append([0], sigmas)
     for idx in range(num_vis):
