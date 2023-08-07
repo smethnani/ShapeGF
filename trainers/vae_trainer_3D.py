@@ -128,10 +128,10 @@ class Trainer(BaseTrainer):
         #     np.array(self.sigmas))[labels].float().view(batch_size, 1).cuda()
         # z = torch.cat((z, used_sigmas), dim=1)
 
-        # noise = torch.randn(batch_size, tr_pts.shape[1], tr_pts.shape[2])
-        # noise = noise.to(tr_pts.device)
+        noise = torch.randn(batch_size, tr_pts.shape[1], tr_pts.shape[2])
+        noise = noise.to(tr_pts.device)
         # res = flow_matching_loss(self.vnet, z, tr_pts, noise)
-        pred = self.decoder(z).transpose(1, 2)
+        pred = self.decoder(x=noise, c=z).transpose(1, 2)
         target = tr_pts.transpose(1, 2)
         loss = 0
         if self.args.loss_type == 'chamfer':

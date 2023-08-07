@@ -40,7 +40,7 @@ class Encoder(nn.Module):
             self.fc_bn2_v = nn.BatchNorm1d(128)
 
     def forward(self, x):
-        x = x.transpose(1, 2)
+        x = x.transpose(1, 2) #B N D: B 2048 3 -> B 3 2048
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))

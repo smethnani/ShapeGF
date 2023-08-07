@@ -78,14 +78,13 @@ class Decoder(nn.Module):
         super().__init__()
         self.cfg = cfg
         self.z_dim = z_dim = cfg.z_dim
-        self.num_points = cfg.num_points
         self.dim = dim = cfg.dim
         self.out_dim = out_dim = cfg.out_dim
         self.hidden_size = hidden_size = cfg.hidden_size
         self.n_blocks = n_blocks = cfg.n_blocks
 
         # Input = Conditional = zdim (shape) + dim (xyz) + tdim (time)
-        c_dim = z_dim
+        c_dim = z_dim + dim
         self.conv_p = nn.Conv1d(c_dim, hidden_size, 1)
         self.blocks = nn.ModuleList([
             ResnetBlockConv1d(c_dim, hidden_size) for _ in range(n_blocks)
@@ -95,18 +94,18 @@ class Decoder(nn.Module):
         self.actvn_out = nn.ReLU()
 
     # This should have the same signature as the sig condition one
-    def forward(self, c):
+    def forward(self, x, c):
         """
         :param x: (bs, npoints, self.dim) Input coordinate (xyz)
         :param c: (bs, self.zdim) Shape latent code
         :return: (bs, npoints, self.dim) Gradient (self.dim dimension)
         """
-        # p = x.transpose(1, 2)  # (bs, dim, n_points)
-        # batch_size, D, num_points = p.size()
+        p = x.transpose(1, 2)  # (bs, dim, n_points)
+        batch_size, D, num_points = p.size()
 
-        c_xyz = c.unsqueeze(-1).expand(-1, -1, self.num_points)
+        c_expand = ctx_emb.unsqueeze(2).expand(-1, -1, num_points)
         #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
-        # c_xyz = torch.cat([p, c_expand], dim=1)
+        c_xyz = torch.cat([p, c_expand], dim=1)
         net = self.conv_p(c_xyz)
         for block in self.blocks:
             net = block(net, c_xyz)
