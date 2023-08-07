@@ -122,7 +122,7 @@ def main_worker(gpu, ngpus_per_node, cfg, args):
 
      
     args.run_id = args.run_id + f'-gpu-{gpu}'
-    wandb_run = wandb.init(dir=opt.outdir, group='train-shapeflow', config=cfg, project='ShapeFlow', id=args.run_id)
+    wandb_run = wandb.init(dir=cfg.log_dir, group='train-shapeflow', config=cfg, project='ShapeFlow', sync_tensorboard=True, id=args.run_id)
 
     with torch.cuda.device(args.gpu):
         trainer_lib = importlib.import_module(cfg.trainer.type)
