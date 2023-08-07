@@ -103,7 +103,7 @@ class Decoder(nn.Module):
         p = x.transpose(1, 2)  # (bs, dim, n_points)
         batch_size, D, num_points = p.size()
 
-        c_expand = ctx_emb.unsqueeze(2).expand(-1, -1, num_points)
+        c_expand = c.unsqueeze(2).expand(-1, -1, num_points)
         #print(f'p: {p.shape}, ctx_emb: {ctx_emb.shape}, c_expand: {c_expand.shape}')
         c_xyz = torch.cat([p, c_expand], dim=1)
         net = self.conv_p(c_xyz)
