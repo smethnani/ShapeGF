@@ -106,7 +106,7 @@ def main_worker(cfg, args, wandb_run=None):
         for bidx, data in enumerate(train_loader):
             step = bidx + len(train_loader) * epoch + 1
             # logs_info = trainer.update(data)
-            sample_pairings = trainer.gen_reflow_pairs(data)
+            sample_pairings = trainer.gen_reflow_pairs(bs=64)
             duration = time.time() - start_time
             print("Epoch %d Batch [%2d/%2d] Time [%3.2fs]"
                     % (epoch, bidx, len(train_loader), duration))
@@ -123,6 +123,11 @@ def main_worker(cfg, args, wandb_run=None):
                 wandb.log({ "Sample": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in samples],
                             "True": [wandb.Object3D(pc[:, [0, 2, 1]]) for pc in true_samples]})
             start_time = time.time()
+
+    for i in range(n_iters):
+        batch_size = 64
+        noise = torch.randn((batch_size, self.gen.out_dim))
+        sample_pairings = trainer.gen_reflow_pairs(noise=noise)
 
     writer.close()
 

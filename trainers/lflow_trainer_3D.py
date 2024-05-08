@@ -180,8 +180,9 @@ class Trainer(BaseTrainer):
             noise = torch.randn((z.shape[0], num_points, 3))
             return self.generate_sample(z, noise=noise, num_points=num_points)
 
-    def sample_latent(self, num_shapes=1, n_timesteps=1000):
-        zn = torch.randn((num_shapes, self.gen.out_dim))
+    def sample_latent(self, num_shapes=1, zn=None, n_timesteps=1000):
+        if zn is None:
+            zn = torch.randn((num_shapes, self.gen.out_dim))
         z = zn.clone()
         z = z.cuda()
         dt = 1. / n_timesteps
@@ -251,6 +252,19 @@ class Trainer(BaseTrainer):
 
         return all_res
 
+        # noise -> generator.latent(noise) -> latent -> decoder(latent) -> sample
+    def gen_reflow_pairs(self, noise, *args, **kwargs):
+        # tr_pts = data['tr_points'].cuda()  # (B, #points, 3)smn_ae_trainer.py
+        batch_size = noise.size(0)
+        num_points = self.cfg.inference.num_points
+        dim = self.cfg.models.scorenet.dim
+        with torch.no_grad():
+            self.gen.eval()
+            z  = self.sample_latent(num_shapes=batch_size, zn=noise)
+            # z, _ = self.encoder(tr_pts)
+            x0 = torch.randn((z.size(0), num_points, dim), dtype=torch.float, device=z.device)
+            x1, _, _ = self.generate_sample(z, noise=x0, num_points=num_points, n_timesteps=1000)
+            return [x0, x1, z]
 
     def interpolate(self, bs, *args, **kwargs):
         all_res = {}
